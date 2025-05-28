@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <appender class="ch.qos.logback.core.ConsoleAppender" name="STDOUT">
+    <encoder>
+      <pattern>
+        %date %highlight(%+5level) %-26thread %X{dd.trace_id:-0} %X{dd.span_id:-0} %logger{36}
+        [%file:%line] %green(%msg) %n
+      </pattern>
+    </encoder>
+  </appender>
+
+  <root level="INFO">
+    <appender-ref ref="STDOUT"/>
+  </root>
+</configuration>

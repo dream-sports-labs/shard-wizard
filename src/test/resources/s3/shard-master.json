@@ -1,0 +1,82 @@
+[
+  {
+    "shardId": 1,
+    "details": {
+      "databaseType": "POSTGRES",
+      "shardConnectionParams": {
+        "writerHost": "localhost",
+        "readerHost": "localhost",
+        "port": 5433,
+        "maxConnections": 5,
+        "maxWaitQueueSize": 50,
+        "connectionTimeoutMs": 500
+      }
+    },
+    "default": false,
+    "active": true
+  },
+  {
+    "shardId": 2,
+    "details": {
+      "databaseType": "POSTGRES",
+      "shardConnectionParams": {
+        "writerHost": "localhost",
+        "readerHost": "localhost",
+        "port": 5434,
+        "maxConnections": 5,
+        "maxWaitQueueSize": 50,
+        "connectionTimeoutMs": 500
+      }
+    },
+    "default": false,
+    "active": true
+  },
+  {
+    "shardId": 3,
+    "details": {
+      "databaseType": "POSTGRES",
+      "shardConnectionParams": {
+        "writerHost": "localhost",
+        "readerHost": "localhost",
+        "port": 5435,
+        "maxConnections": 5,
+        "maxWaitQueueSize": 50,
+        "connectionTimeoutMs": 500
+      }
+    },
+    "default": true,
+    "active": true
+  },
+  {
+    "shardId": 4,
+    "details": {
+      "databaseType": "POSTGRES",
+      "shardConnectionParams": {
+        "writerHost": "localhost",
+        "readerHost": "localhost",
+        "port": 5436,
+        "maxConnections": 5,
+        "maxWaitQueueSize": 50,
+        "connectionTimeoutMs": 500
+      }
+    },
+    "default": true,
+    "active": true
+  },
+  {
+    "shardId": 5,
+    "details": {
+      "databaseType": "POSTGRES",
+      "shardConnectionParams": {
+        "writerHost": "localhost",
+        "readerHost": "localhost",
+        "port": 5437,
+        "maxConnections": 5,
+        "maxWaitQueueSize": 50,
+        "connectionTimeoutMs": 500
+      }
+    },
+    "default": false,
+    "active": false
+  }
+]

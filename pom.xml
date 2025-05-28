@@ -1,0 +1,283 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.dream11</groupId>
+  <artifactId>shard-wizard</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+  <packaging>jar</packaging>
+  <name>Shard Wizard</name>
+  <description>Vert.x library for scalable shard management and routing of entities across multiple shards</description>
+
+  <properties>
+    <maven.compiler.source>11</maven.compiler.source>
+    <maven.compiler.target>11</maven.compiler.target>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <vertx.version>3.9.2</vertx.version>
+    <mockito.version>3.4.0</mockito.version>
+    <config.version>1.3.2</config.version>
+    <commons-lang3.version>3.9</commons-lang3.version>
+    <git-code-format-maven-plugin.version>2.7</git-code-format-maven-plugin.version>
+    <vertx.completable.future.version>0.1.2</vertx.completable.future.version>
+    <lombok.version>1.18.24</lombok.version>
+    <vertx.pg.client.version>3.9.2</vertx.pg.client.version>
+    <logback.version>1.5.7</logback.version>
+    <postgresql.version>42.7.3</postgresql.version>
+    <slf4j-api.version>2.0.16</slf4j-api.version>
+    <logback-classic.version>1.5.7</logback-classic.version>
+    <vertx-junit5.version>4.5.1</vertx-junit5.version>
+    <client.version>2.1</client.version>
+    <postgresql.version.testcontainers>1.18.3</postgresql.version.testcontainers>
+    <localstack.version>1.21.0</localstack.version>
+    <s3.version>2.31.14</s3.version>
+    <netty-nio-client.version>2.31.14</netty-nio-client.version>
+    <HikariCP.version>5.1.0</HikariCP.version>
+    <rxjava.version>2.2.12</rxjava.version>
+    <guice.version>7.0.0</guice.version>
+    <vertx-config.version>4.5.1</vertx-config.version>
+    <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
+    <luaj-jse.version>3.0.1</luaj-jse.version>
+  </properties>
+
+  <dependencies>
+
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-core</artifactId>
+      <version>${vertx.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>${slf4j-api.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <version>${logback-classic.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <version>${lombok.version}</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-pg-client</artifactId>
+      <version>${vertx.pg.client.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <version>${mockito.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-inline</artifactId>
+      <version>${mockito.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-junit5</artifactId>
+      <version>${vertx-junit5.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.ongres.scram</groupId>
+      <artifactId>client</artifactId>
+      <version>${client.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>postgresql</artifactId>
+      <version>${postgresql.version.testcontainers}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>localstack</artifactId>
+      <version>${localstack.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <version>${postgresql.version}</version> <!-- Or latest -->
+    </dependency>
+
+
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>s3</artifactId>
+      <version>${s3.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>netty-nio-client</artifactId>
+      <version>${netty-nio-client.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.typesafe</groupId>
+      <artifactId>config</artifactId>
+      <version>${config.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-rx-java2</artifactId>
+      <version>${vertx.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.zaxxer</groupId>
+      <artifactId>HikariCP</artifactId>
+      <version>${HikariCP.version}</version> <!-- or the latest version -->
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+      <version>${commons-lang3.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-core</artifactId>
+      <version>${logback.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>io.reactivex.rxjava2</groupId>
+      <artifactId>rxjava</artifactId>
+      <version>${rxjava.version}</version>
+      <scope>compile</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>me.escoffier.vertx</groupId>
+      <artifactId>vertx-completable-future</artifactId>
+      <version>${vertx.completable.future.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.luaj</groupId>
+      <artifactId>luaj-jse</artifactId>
+      <version>${luaj-jse.version}</version> <!-- or latest -->
+    </dependency>
+
+    <dependency>
+      <groupId>com.google.inject</groupId>
+      <artifactId>guice</artifactId>
+      <version>${guice.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-config</artifactId>
+      <version>${vertx-config.version}</version> <!-- or the version matching your Vert.x core -->
+    </dependency>
+
+  </dependencies>
+
+
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>git-code-format-maven-plugin</artifactId>
+        <configuration>
+          <googleJavaFormatOptions>
+            <fixImportsOnly>false</fixImportsOnly>
+            <skipSortingImports>false</skipSortingImports>
+            <skipRemovingUnusedImports>false</skipRemovingUnusedImports>
+          </googleJavaFormatOptions>
+        </configuration>
+        <dependencies>
+          <!-- Enable https://github.com/google/google-java-format -->
+          <dependency>
+            <artifactId>google-java-format</artifactId>
+            <groupId>com.google.googlejavaformat</groupId>
+            <version>1.7</version>
+          </dependency>
+        </dependencies>
+        <executions>
+          <!-- On commit, format the modified files -->
+          <execution>
+            <goals>
+              <goal>install-hooks</goal>
+            </goals>
+            <id>install-formatter-hook</id>
+          </execution>
+          <!-- On Maven verify phase, fail if any file
+          (including unmodified) is badly formatted -->
+          <execution>
+            <goals>
+              <goal>validate-code-format</goal>
+            </goals>
+            <id>validate-code-format</id>
+          </execution>
+        </executions>
+        <groupId>com.cosium.code</groupId>
+        <version>${git-code-format-maven-plugin.version}</version>
+      </plugin>
+
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>0.8.12</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>prepare-agent</goal>
+            </goals>
+          </execution>
+
+          <execution>
+            <id>report</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>report</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+
+      <plugin>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>3.1.2</version>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>${maven-compiler-plugin.version}</version>
+        <configuration>
+          <source>${maven.compiler.source}</source>
+          <target>${maven.compiler.target}</target>
+          <annotationProcessors>
+            <annotationProcessor>lombok.launch.AnnotationProcessorHider$AnnotationProcessor
+            </annotationProcessor>
+          </annotationProcessors>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>
