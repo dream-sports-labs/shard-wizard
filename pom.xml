@@ -6,10 +6,34 @@
 
   <groupId>com.dream11</groupId>
   <artifactId>shard-wizard</artifactId>
-  <version>1.0.0-SNAPSHOT</version>
+  <version>0.0.1</version>
   <packaging>jar</packaging>
   <name>Shard Wizard</name>
   <description>Vert.x library for scalable shard management and routing of entities across multiple shards</description>
+  <url>https://github.com/dream-sports-labs/shard-wizard</url>
+
+  <licenses>
+    <license>
+      <name>MIT License</name>
+      <url>https://opensource.org/licenses/MIT</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <scm>
+    <url>https://github.com/dream-sports-labs/shard-wizard</url>
+    <connection>scm:git:git://github.com/dream-sports-labs/shard-wizard.git</connection>
+    <developerConnection>scm:git:ssh://github.com/dream-sports-labs/shard-wizard.git</developerConnection>
+  </scm>
+
+  <developers>
+    <developer>
+      <name>SHRUTI PATOLIA</name>
+      <email>shruti.patolia@dream11.com</email>
+      <organization>Dream11</organization>
+      <organizationUrl>https://www.dream11.com/</organizationUrl>
+    </developer>
+  </developers>
 
   <properties>
     <maven.compiler.source>11</maven.compiler.source>
@@ -39,6 +63,8 @@
     <vertx-config.version>4.5.1</vertx-config.version>
     <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
     <luaj-jse.version>3.0.1</luaj-jse.version>
+    <maven.nexus.plugin.version>1.7.0</maven.nexus.plugin.version>
+    <maven.gpg.plugin.version>3.2.7</maven.gpg.plugin.version>
   </properties>
 
   <dependencies>
@@ -201,6 +227,45 @@
   <build>
     <plugins>
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+        <version>3.2.1</version>
+        <executions>
+          <execution>
+            <id>attach-sources</id>
+            <goals><goal>jar</goal></goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- Javadoc JAR -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>3.5.0</version>
+        <executions>
+          <execution>
+            <id>attach-javadocs</id>
+            <goals><goal>jar</goal></goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- GPG Signing -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-gpg-plugin</artifactId>
+        <version>3.1.0</version>
+        <executions>
+          <execution>
+            <id>sign-artifacts</id>
+            <phase>verify</phase>
+            <goals><goal>sign</goal></goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
         <artifactId>git-code-format-maven-plugin</artifactId>
         <configuration>
           <googleJavaFormatOptions>
@@ -277,7 +342,56 @@
           </annotationProcessors>
         </configuration>
       </plugin>
+
+      <plugin>
+        <groupId>org.sonatype.central</groupId>
+        <artifactId>central-publishing-maven-plugin</artifactId>
+        <version>0.8.0</version>
+        <extensions>true</extensions>
+        <configuration>
+          <publishingServerId>central</publishingServerId>
+          <autoPublish>false</autoPublish> <!-- TODO: Change to true for auto publishing to maven central -->
+        </configuration>
+      </plugin>
+
     </plugins>
   </build>
+
+  <profiles>
+    <profile>
+      <id>release</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>${maven.gpg.plugin.version}</version>
+            <configuration>
+              <gpgArguments>
+                <arg>--pinentry-mode</arg>
+                <arg>loopback</arg>
+              </gpgArguments>
+            </configuration>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+
+  <distributionManagement>
+    <snapshotRepository>
+      <id>central</id>
+      <url>https://central.sonatype.com/repository/maven-snapshots/</url>
+    </snapshotRepository>
+  </distributionManagement>
 
 </project>
