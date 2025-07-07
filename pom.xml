@@ -268,43 +268,43 @@
         </executions>
       </plugin>
 
-      <plugin>
-        <artifactId>git-code-format-maven-plugin</artifactId>
-        <configuration>
-          <googleJavaFormatOptions>
-            <fixImportsOnly>false</fixImportsOnly>
-            <skipSortingImports>false</skipSortingImports>
-            <skipRemovingUnusedImports>false</skipRemovingUnusedImports>
-          </googleJavaFormatOptions>
-        </configuration>
-        <dependencies>
-          <!-- Enable https://github.com/google/google-java-format -->
-          <dependency>
-            <artifactId>google-java-format</artifactId>
-            <groupId>com.google.googlejavaformat</groupId>
-            <version>1.7</version>
-          </dependency>
-        </dependencies>
-        <executions>
-          <!-- On commit, format the modified files -->
-          <execution>
-            <goals>
-              <goal>install-hooks</goal>
-            </goals>
-            <id>install-formatter-hook</id>
-          </execution>
-          <!-- On Maven verify phase, fail if any file
-          (including unmodified) is badly formatted -->
-          <execution>
-            <goals>
-              <goal>validate-code-format</goal>
-            </goals>
-            <id>validate-code-format</id>
-          </execution>
-        </executions>
-        <groupId>com.cosium.code</groupId>
-        <version>${git-code-format-maven-plugin.version}</version>
-      </plugin>
+<!--      <plugin>-->
+<!--        <artifactId>git-code-format-maven-plugin</artifactId>-->
+<!--        <configuration>-->
+<!--          <googleJavaFormatOptions>-->
+<!--            <fixImportsOnly>false</fixImportsOnly>-->
+<!--            <skipSortingImports>false</skipSortingImports>-->
+<!--            <skipRemovingUnusedImports>false</skipRemovingUnusedImports>-->
+<!--          </googleJavaFormatOptions>-->
+<!--        </configuration>-->
+<!--        <dependencies>-->
+<!--          &lt;!&ndash; Enable https://github.com/google/google-java-format &ndash;&gt;-->
+<!--          <dependency>-->
+<!--            <artifactId>google-java-format</artifactId>-->
+<!--            <groupId>com.google.googlejavaformat</groupId>-->
+<!--            <version>1.7</version>-->
+<!--          </dependency>-->
+<!--        </dependencies>-->
+<!--        <executions>-->
+<!--          &lt;!&ndash; On commit, format the modified files &ndash;&gt;-->
+<!--          <execution>-->
+<!--            <goals>-->
+<!--              <goal>install-hooks</goal>-->
+<!--            </goals>-->
+<!--            <id>install-formatter-hook</id>-->
+<!--          </execution>-->
+<!--          &lt;!&ndash; On Maven verify phase, fail if any file-->
+<!--          (including unmodified) is badly formatted &ndash;&gt;-->
+<!--          <execution>-->
+<!--            <goals>-->
+<!--              <goal>validate-code-format</goal>-->
+<!--            </goals>-->
+<!--            <id>validate-code-format</id>-->
+<!--          </execution>-->
+<!--        </executions>-->
+<!--        <groupId>com.cosium.code</groupId>-->
+<!--        <version>${git-code-format-maven-plugin.version}</version>-->
+<!--      </plugin>-->
 
       <plugin>
         <groupId>org.jacoco</groupId>
