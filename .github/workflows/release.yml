@@ -3,8 +3,6 @@ name: Publish Release
 on:
   release:
     types: [released]
-  pull_request:
-    types: [ opened, synchronize ]
 
 jobs:
   release:
@@ -30,15 +28,15 @@ jobs:
           gpg-passphrase: MAVEN_GPG_PASSPHRASE
           cache: maven
 
-#      - name: Get version from tag
-#        id: get_version
-#        run: |
-#          releaseVersion="${GITHUB_REF/refs\/tags\//}"
-#          releaseVersion="${releaseVersion//v/}"
-#          echo "VERSION=$releaseVersion" >> $GITHUB_OUTPUT
+      - name: Get version from tag
+        id: get_version
+        run: |
+          releaseVersion="${GITHUB_REF/refs\/tags\//}"
+          releaseVersion="${releaseVersion//v/}"
+          echo "VERSION=$releaseVersion" >> $GITHUB_OUTPUT
 
       - name: Update version pom.xml
-        run: mvn --no-transfer-progress versions:set -DnewVersion=0.0.1
+        run: mvn --no-transfer-progress versions:set -DnewVersion=${{ steps.get_version.outputs.VERSION }}
 
       - name: Install gpg key
         run: echo -e "${{ secrets.OSSRH_GPG_SECRET_KEY }}" | base64 --decode | gpg --batch --import
