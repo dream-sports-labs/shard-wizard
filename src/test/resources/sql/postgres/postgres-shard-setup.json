@@ -1,0 +1,16 @@
+{
+  "shardManager": {
+    "port": 5400,
+    "initScript": "sql/postgres/postgres-shard-manager.sql"
+  },
+  "shards": [
+    { "port": 5433, "initScript": "sql/postgres/postgres-shard.sql" },
+    { "port": 5434, "initScript": "sql/postgres/postgres-shard.sql" },
+    { "port": 5435, "initScript": "sql/postgres/postgres-shard.sql" },
+    { "port": 5436, "initScript": "sql/postgres/postgres-shard.sql" },
+    { "port": 5437, "initScript": "sql/postgres/postgres-shard.sql" }
+  ],
+  "userName": "postgres",
+  "password": "postgres",
+  "dbName": "postgres"
+}

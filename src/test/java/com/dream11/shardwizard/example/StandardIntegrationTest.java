@@ -2,11 +2,11 @@ package com.dream11.shardwizard.example;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.dream11.shardwizard.dto.ShardDetails;
 import com.dream11.shardwizard.example.order.CreateOrderResponse;
 import com.dream11.shardwizard.example.order.OrderDto;
 import com.dream11.shardwizard.exception.EntityNotMappedToShardException;
 import com.dream11.shardwizard.exception.ShardNotPresentException;
-import com.dream11.shardwizard.model.ShardDetails;
 import io.reactivex.Single;
 import java.util.ArrayList;
 import java.util.List;
@@ -18,8 +18,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 @Slf4j
-public class StandardIntegrationTest extends BaseShardTest {
-
+public class StandardIntegrationTest extends BaseShardTest { // TODO - TO CHECK
   @BeforeAll
   public static void setUp() throws Exception {
     log.info("Starting test setup");
@@ -30,7 +29,7 @@ public class StandardIntegrationTest extends BaseShardTest {
       throw new IllegalStateException("Vertx instance is null after setup");
     }
     if (orderDaoFactory == null) {
-      throw new IllegalStateException("OrderAbstractDaoFactory is null after setup");
+      throw new IllegalStateException("OrderDaoFactory is null after setup");
     }
 
     log.info("Test setup completed successfully");
@@ -38,10 +37,10 @@ public class StandardIntegrationTest extends BaseShardTest {
 
   @Test
   void shouldSaveOrdersAndReturnOrdersAndShardDetailsInDefaultShards() throws Exception {
-    int round1 = 1111; /* Is Not configured on any shard, shard1 and 2 are default */
+    int round1 = 1111; /* Is Not configured on any shard, shard 3 and 4 are default */
     List<ShardDetails> shardDetailsList = new ArrayList<>();
-    shardDetailsList.add(createPOSTGresShard(3, 5435));
-    shardDetailsList.add(createPOSTGresShard(4, 5436));
+    shardDetailsList.add(createPostgresShard(3, 5435));
+    shardDetailsList.add(createPostgresShard(4, 5436));
 
     int userId1 = 60009001;
     int userId2 = 60009002;
@@ -50,11 +49,22 @@ public class StandardIntegrationTest extends BaseShardTest {
   }
 
   @Test
-  void shouldSaveOrdersAndReturnOrdersAndShardDetailsInSpecialShards() throws Exception {
+  void shouldSaveOrdersAndReturnOrdersAndShardDetailsInTwoDifferentShards() throws Exception {
+    int round1 = 1024; /* Configured on shard 1(Postgres), 6(Mysql) that are active */
+    List<ShardDetails> shardDetailsList = new ArrayList<>();
+    shardDetailsList.add(createPostgresShard(1, 5433));
+    shardDetailsList.add(createMySQLShard(6, 5438));
+    int userId1 = 60009011;
+    int userId2 = 60009022;
+    runTestWithOrders(round1, shardDetailsList, userId1, userId2);
+  }
+
+  @Test
+  void shouldSaveOrdersAndReturnOrdersAndShardDetailsInSameShards() throws Exception {
     int round1 = 2222; /* Configured on shard 1, 2 that are active */
     List<ShardDetails> shardDetailsList = new ArrayList<>();
-    shardDetailsList.add(createPOSTGresShard(1, 5433));
-    shardDetailsList.add(createPOSTGresShard(2, 5434));
+    shardDetailsList.add(createPostgresShard(1, 5433));
+    shardDetailsList.add(createPostgresShard(2, 5434));
 
     int userId1 = 60009011;
     int userId2 = 60009022;
@@ -101,10 +111,10 @@ public class StandardIntegrationTest extends BaseShardTest {
 
   @Test
   void shouldCreateEntityMappingWhenGetOrCreateShardDetailsIsCalled() throws Throwable {
-    int round1 = 5555; /* Is Not configured and will be mapped to default shard 1 and 2*/
+    int round1 = 5555; /* Is Not configured and will be mapped to default shard 3 and 4*/
     List<ShardDetails> expectedShardDetails = new ArrayList<>();
-    expectedShardDetails.add(createPOSTGresShard(3, 5435));
-    expectedShardDetails.add(createPOSTGresShard(4, 5436));
+    expectedShardDetails.add(createPostgresShard(3, 5435));
+    expectedShardDetails.add(createPostgresShard(4, 5436));
 
     runShardDetailsTest(round1, expectedShardDetails);
   }

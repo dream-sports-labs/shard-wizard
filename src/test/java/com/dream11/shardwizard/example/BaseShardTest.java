@@ -1,23 +1,36 @@
 package com.dream11.shardwizard.example;
 
+import static com.dream11.shardwizard.example.helpers.Constants.TABLE_NAME;
+
 import com.dream11.shardwizard.constant.DatabaseType;
+import com.dream11.shardwizard.dto.CircuitBreakerConfigDTO;
+import com.dream11.shardwizard.dto.ShardConfig;
+import com.dream11.shardwizard.dto.ShardConnectionParameters;
+import com.dream11.shardwizard.dto.ShardDetails;
 import com.dream11.shardwizard.example.order.CreateOrderResponse;
-import com.dream11.shardwizard.example.order.OrderAbstractDaoFactory;
+import com.dream11.shardwizard.example.order.OrderDao;
+import com.dream11.shardwizard.example.order.OrderDaoFactory;
 import com.dream11.shardwizard.example.order.OrderDto;
 import com.dream11.shardwizard.example.utils.AppContext;
-import com.dream11.shardwizard.model.ShardConfig;
-import com.dream11.shardwizard.model.ShardConnectionParameters;
-import com.dream11.shardwizard.model.ShardDetails;
+import io.reactivex.Observable;
 import io.reactivex.Single;
 import io.vertx.reactivex.core.Vertx;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomUtils;
+import software.amazon.awssdk.regions.Region;
 
 @Slf4j
 public abstract class BaseShardTest {
+  protected static Vertx vertx;
+  protected static OrderDaoFactory orderDaoFactory;
 
   protected static final int DEFAULT_MAX_CONNECTIONS = 5;
   protected static final int DEFAULT_CONNECTION_TIMEOUT_MS = 500;
@@ -29,8 +42,18 @@ public abstract class BaseShardTest {
   protected static final String DEFAULT_MYSQL_USERNAME = "mysql";
   protected static final String DEFAULT_MYSQL_PASSWORD = "mysql";
   protected static final String DEFAULT_HOST = "localhost";
-  protected static Vertx vertx;
-  protected static OrderAbstractDaoFactory orderDaoFactory;
+
+  // CircuitBreaker Configuration Constants
+  protected static final boolean CIRCUIT_BREAKER_ENABLED = true;
+  protected static final int CIRCUIT_BREAKER_FAILURE_RATE_THRESHOLD = 100;
+  protected static final int CIRCUIT_BREAKER_WAIT_DURATION_MS = 10000;
+  protected static final int CIRCUIT_BREAKER_SLIDING_WINDOW_SIZE = 10;
+  protected static final String CIRCUIT_BREAKER_SLIDING_WINDOW_TYPE = "COUNT_BASED";
+  protected static final int CIRCUIT_BREAKER_PERMITTED_CALLS_HALF_OPEN = 10;
+  protected static final int CIRCUIT_BREAKER_MIN_CALLS = 100;
+  protected static final int CIRCUIT_BREAKER_SLOW_CALL_RATE_THRESHOLD = 100;
+  protected static final int CIRCUIT_BREAKER_SLOW_CALL_DURATION_MS = 10000;
+  protected static final boolean CIRCUIT_BREAKER_DISABLED = false;
 
   protected static void setupBase() throws Exception {
     // Set test environment
@@ -54,31 +77,31 @@ public abstract class BaseShardTest {
               AppContext.initialize(new MainModule());
               log.info("AppContext initialized successfully");
 
-              log.info("Getting OrderAbstractDaoFactory instance from AppContext");
-              orderDaoFactory = AppContext.getInstance(OrderAbstractDaoFactory.class);
+              log.info("Getting OrderDaoFactory instance from AppContext");
+              orderDaoFactory = AppContext.getInstance(OrderDaoFactory.class);
 
               if (orderDaoFactory == null) {
                 String errorMsg =
-                    "Failed to get OrderAbstractDaoFactory instance from AppContext - getInstance returned null";
+                    "Failed to get OrderDaoFactory instance from AppContext - getInstance returned null";
                 log.error(errorMsg);
                 error.set(new IllegalStateException(errorMsg));
                 latch.countDown();
                 return;
               }
 
-              log.info(
-                  "OrderAbstractDaoFactory instance obtained successfully, starting bootstrap");
+              log.info("OrderDaoFactory instance obtained successfully, starting bootstrap");
               orderDaoFactory
                   .rxBootstrap()
                   .doOnSubscribe(d -> log.info("Bootstrap subscription started"))
                   .doOnComplete(
                       () -> {
-                        log.info("OrderAbstractDaoFactory bootstrapped successfully");
+                        log.info("OrderDaoFactory bootstrapped successfully");
                         latch.countDown();
                       })
                   .doOnError(
                       e -> {
-                        log.error("Failed to bootstrap OrderAbstractDaoFactory", e);
+                        log.error(
+                            "Failed to bootstrap OrderDaoFactory due to ==> {} ", e.getMessage());
                         error.set(e);
                         latch.countDown();
                       })
@@ -95,21 +118,34 @@ public abstract class BaseShardTest {
 
       if (orderDaoFactory == null) {
         throw new IllegalStateException(
-            "OrderAbstractDaoFactory is null after setup completion - initialization failed");
+            "OrderDaoFactory is null after setup completion - initialization failed");
       }
 
-      log.info(
-          "Test environment setup completed successfully with initialized OrderAbstractDaoFactory");
+      log.info("Test environment setup completed successfully with initialized OrderDaoFactory");
     } catch (Exception e) {
       log.error("Critical error during test setup", e);
       if (orderDaoFactory == null) {
-        log.error("OrderAbstractDaoFactory is null after error");
+        log.error("OrderDaoFactory is null after error");
       }
       throw e;
     }
   }
 
-  protected static ShardDetails createPOSTGresShard(int shardId, int port) {
+  private static CircuitBreakerConfigDTO createCircuitBreakerConfig() {
+    return CircuitBreakerConfigDTO.builder()
+        .enabled(CIRCUIT_BREAKER_ENABLED)
+        .failureRateThreshold(CIRCUIT_BREAKER_FAILURE_RATE_THRESHOLD)
+        .waitDurationInOpenState(CIRCUIT_BREAKER_WAIT_DURATION_MS)
+        .slidingWindowSize(CIRCUIT_BREAKER_SLIDING_WINDOW_SIZE)
+        .slidingWindowType(CIRCUIT_BREAKER_SLIDING_WINDOW_TYPE)
+        .permittedNumberOfCallsInHalfOpenState(CIRCUIT_BREAKER_PERMITTED_CALLS_HALF_OPEN)
+        .minimumNumberOfCalls(CIRCUIT_BREAKER_MIN_CALLS)
+        .slowCallRateThreshold(CIRCUIT_BREAKER_SLOW_CALL_RATE_THRESHOLD)
+        .slowCallDurationThreshold(CIRCUIT_BREAKER_SLOW_CALL_DURATION_MS)
+        .build();
+  }
+
+  protected static ShardDetails createPostgresShard(int shardId, int port) {
     ShardConnectionParameters shardConnectionParams =
         ShardConnectionParameters.builder()
             .maxConnections(DEFAULT_MAX_CONNECTIONS)
@@ -121,6 +157,10 @@ public abstract class BaseShardTest {
             .password(DEFAULT_POSTGRES_PASSWORD)
             .maxWaitQueueSize(DEFAULT_MAX_WAIT_QUEUE_SIZE)
             .connectionTimeoutMs(DEFAULT_CONNECTION_TIMEOUT_MS)
+            .circuitBreaker(createCircuitBreakerConfig())
+            .tableConnectionMap(Map.of())
+            .accessKey("")
+            .secretKey("")
             .build();
     ShardConfig shardConfig =
         ShardConfig.builder()
@@ -130,7 +170,44 @@ public abstract class BaseShardTest {
     return ShardDetails.builder().shardId(shardId).shardConfig(shardConfig).build();
   }
 
-  private static ShardDetails createMySQLShard(int shardId, int port) {
+  protected static ShardDetails createDynamoShard(int shardId, int port) {
+
+    Map<String, Object> tableConnectionMap =
+        Map.of(
+            TABLE_NAME,
+            Map.of(
+                "endpoint",
+                "http://localhost:" + port,
+                "region",
+                Region.US_EAST_1.toString().toLowerCase()));
+
+    ShardConnectionParameters shardConnectionParams =
+        ShardConnectionParameters.builder()
+            .port(port)
+            .maxConnections(DEFAULT_MAX_CONNECTIONS)
+            .writerHost("localhost") // or Docker container hostname
+            .readerHost("localhost")
+            .database(DEFAULT_POSTGRES_DATABASE) // DynamoDB table name or logical group
+            .username(DEFAULT_POSTGRES_USERNAME) // not used but retained for consistency
+            .password(DEFAULT_POSTGRES_PASSWORD)
+            .maxWaitQueueSize(DEFAULT_MAX_WAIT_QUEUE_SIZE)
+            .connectionTimeoutMs(DEFAULT_CONNECTION_TIMEOUT_MS)
+            .accessKey("")
+            .secretKey("")
+            .tableConnectionMap(tableConnectionMap)
+            .circuitBreaker(createCircuitBreakerConfig())
+            .build();
+
+    ShardConfig shardConfig =
+        ShardConfig.builder()
+            .shardConnectionParams(shardConnectionParams)
+            .databaseType(DatabaseType.DYNAMO)
+            .build();
+
+    return ShardDetails.builder().shardId(shardId).shardConfig(shardConfig).build();
+  }
+
+  protected static ShardDetails createMySQLShard(int shardId, int port) {
     ShardConnectionParameters shardConnectionParams =
         ShardConnectionParameters.builder()
             .maxConnections(5)
@@ -140,6 +217,9 @@ public abstract class BaseShardTest {
             .username(DEFAULT_MYSQL_USERNAME)
             .readerHost("localhost")
             .password(DEFAULT_MYSQL_PASSWORD)
+            .maxWaitQueueSize(DEFAULT_MAX_WAIT_QUEUE_SIZE)
+            .connectionTimeoutMs(DEFAULT_CONNECTION_TIMEOUT_MS)
+            .circuitBreaker(createCircuitBreakerConfig())
             .build();
     ShardConfig shardConfig =
         ShardConfig.builder()
@@ -147,6 +227,131 @@ public abstract class BaseShardTest {
             .databaseType(DatabaseType.MYSQL)
             .build();
     return ShardDetails.builder().shardId(shardId).shardConfig(shardConfig).build();
+  }
+
+  protected Single<CreateOrderResponse> saveOrder(OrderDto orderDto, int round, int userId) {
+    if (orderDaoFactory == null) {
+      return Single.error(
+          new IllegalStateException(
+              "OrderDaoFactory is not initialized. Make sure setupBase() was called before running tests."));
+    }
+    return orderDaoFactory
+        .rxGetOrCreateEntityShardDao(Integer.toString(round), userId)
+        .flatMap(dao -> dao.create(orderDto));
+  }
+
+  protected Single<List<CreateOrderResponse>> saveBulkOrder(
+      List<OrderDto> orderDtos, int round, int userId) {
+    if (orderDaoFactory == null) {
+      return Single.error(
+          new IllegalStateException(
+              "OrderDaoFactory is not initialized. Make sure setupBase() was called before running tests."));
+    }
+    return orderDaoFactory
+        .rxGetOrCreateEntityShardDao(Integer.toString(round), userId)
+        .flatMap(dao -> dao.createBulk(orderDtos));
+  }
+
+  protected Single<CreateOrderResponse> saveOrderUsingExecuteQuery(
+      OrderDto orderDto, int round, int userId) {
+    if (orderDaoFactory == null) {
+      return Single.error(
+          new IllegalStateException(
+              "OrderDaoFactory is not initialized. Make sure setupBase() was called before running tests."));
+    }
+    return orderDaoFactory
+        .rxGetOrCreateEntityShardDao(Integer.toString(round), userId)
+        .flatMap(dao -> dao.rxExecuteQuery(orderDto));
+  }
+
+  protected Single<CreateOrderResponse> beginAndCommitOrderInTrx(
+      OrderDto orderDto, int round, int userId) {
+    if (orderDaoFactory == null) {
+      return Single.error(
+          new IllegalStateException(
+              "OrderDaoFactory is not initialized. Make sure setupBase() was called before running tests."));
+    }
+    return orderDaoFactory
+        .rxGetOrCreateEntityShardDao(Integer.toString(round), userId)
+        .flatMap(
+            dao ->
+                dao.rxBeginTxn()
+                    .flatMap(
+                        trx ->
+                            dao.create(orderDto)
+                                .flatMap(
+                                    res ->
+                                        dao.rxCommitTransaction(trx)
+                                            .flatMap(response -> Single.just(res)))));
+  }
+
+  protected Single<CreateOrderResponse> saveOrderInTransaction(
+      OrderDto orderDto, int round, int userId) {
+    if (orderDaoFactory == null) {
+      return Single.error(
+          new IllegalStateException(
+              "OrderDaoFactory is not initialized. Make sure setupBase() was called before running tests."));
+    }
+    return orderDaoFactory
+        .rxGetOrCreateEntityShardDao(Integer.toString(round), userId)
+        .flatMap(dao -> dao.createTransaction(connection -> dao.create(orderDto)));
+  }
+
+  protected Single<List<CreateOrderResponse>> saveOrderInBatch(List<OrderDto> orders, int round) {
+    if (orderDaoFactory == null) {
+      return Single.error(new IllegalStateException("OrderDaoFactory is not initialized."));
+    }
+
+    // Step 1: Get shard DAOs per user
+    return Observable.fromIterable(orders)
+        .flatMapSingle(
+            order -> {
+              int userId = Integer.parseInt(order.getUserId());
+              return orderDaoFactory
+                  .rxGetOrCreateEntityShardDao(String.valueOf(round), userId)
+                  .map(dao -> Map.entry(dao, order));
+            })
+        .toList()
+        .flatMap(
+            daoOrderPairs -> {
+              // Step 2: Group orders by DAO instance
+              Map<OrderDao, List<OrderDto>> daoToOrdersMap = new HashMap<>();
+              for (Map.Entry<OrderDao, OrderDto> entry : daoOrderPairs) {
+                daoToOrdersMap
+                    .computeIfAbsent(entry.getKey(), k -> new ArrayList<>())
+                    .add(entry.getValue());
+              }
+
+              // Step 3: Call createBatch on each DAO group
+              List<Single<List<CreateOrderResponse>>> batchSaves =
+                  daoToOrdersMap.entrySet().stream()
+                      .map(entry -> entry.getKey().createBatch(entry.getValue()))
+                      .collect(Collectors.toList());
+
+              // Step 4: Zip all batch saves into one response
+              return Single.zip(
+                  batchSaves,
+                  results -> {
+                    List<CreateOrderResponse> allResponses = new ArrayList<>();
+                    for (Object result : results) {
+                      allResponses.addAll((List<CreateOrderResponse>) result);
+                    }
+                    return allResponses;
+                  });
+            });
+  }
+
+  protected OrderDto createSampleOrder(int userId, int roundId) {
+    return OrderDto.builder()
+        .orderAmount(RandomUtils.nextDouble(100, 1000))
+        .orderName("MyOrder For user " + userId + " round " + roundId)
+        .orderDate(Instant.now().toString())
+        .orderStatus("PENDING")
+        .orderTime(Instant.now().toString())
+        .orderType("ONLINE")
+        .userId(String.valueOf(userId))
+        .roundId(String.valueOf(roundId))
+        .build();
   }
 
   protected static void awaitAndHandleError(
@@ -162,30 +367,6 @@ public abstract class BaseShardTest {
     if (error.get() != null) {
       throw new Exception(errorMessage, error.get());
     }
-  }
-
-  protected Single<CreateOrderResponse> saveOrder(OrderDto orderDto, int round, int userId) {
-    if (orderDaoFactory == null) {
-      return Single.error(
-          new IllegalStateException(
-              "OrderAbstractDaoFactory is not initialized. Make sure setupBase() was called before running tests."));
-    }
-    return orderDaoFactory
-        .rxGetOrCreateEntityShardDao(Integer.toString(round), userId)
-        .flatMap(dao -> dao.create(orderDto));
-  }
-
-  protected OrderDto createSampleOrder(int userId, int roundId) {
-    return OrderDto.builder()
-        .orderAmount(RandomUtils.nextDouble(100, 1000))
-        .orderName("MyOrder For user " + userId + " round " + roundId)
-        .orderDate(Instant.now().toString())
-        .orderStatus("PENDING")
-        .orderTime(Instant.now().toString())
-        .orderType("ONLINE")
-        .userId(String.valueOf(userId))
-        .roundId(String.valueOf(roundId))
-        .build();
   }
 
   protected void awaitAndHandleError(CountDownLatch latch, AtomicReference<Throwable> error)

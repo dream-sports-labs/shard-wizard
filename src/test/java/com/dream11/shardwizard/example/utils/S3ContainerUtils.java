@@ -15,27 +15,32 @@ import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
-import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
-import software.amazon.awssdk.services.s3.model.CreateBucketResponse;
-import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
-import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.awssdk.services.s3.model.PutObjectResponse;
+import software.amazon.awssdk.services.s3.model.*;
 
 @Slf4j
 public class S3ContainerUtils {
-
   private static final String LOCAL_ENDPOINT = "http://localhost:4566";
   private static final String DEFAULT_REGION = "us-east-1";
   private static final String RESOURCE_BASE_PATH = "src/test/resources";
 
   private final S3AsyncClient s3Client;
 
+  @Builder
+  @Data
+  public static class S3Config {
+    private final String accessKey;
+    private final String secretKey;
+    private final String region;
+    private final URI endpoint;
+    private final String bucketName;
+    private final String baseFolder;
+  }
+
   public S3ContainerUtils() {
     this.s3Client = createDefaultClient();
   }
 
-  private S3AsyncClient createDefaultClient() {
+  public static S3AsyncClient createDefaultClient() {
     return S3AsyncClient.builder()
         .endpointOverride(URI.create(LOCAL_ENDPOINT))
         .region(Region.of(DEFAULT_REGION))
@@ -134,17 +139,5 @@ public class S3ContainerUtils {
       return new RuntimeException(message + ": " + cause.getMessage(), cause);
     }
     return e;
-  }
-
-  @Builder
-  @Data
-  public static class S3Config {
-
-    private final String accessKey;
-    private final String secretKey;
-    private final String region;
-    private final URI endpoint;
-    private final String bucketName;
-    private final String baseFolder;
   }
 }

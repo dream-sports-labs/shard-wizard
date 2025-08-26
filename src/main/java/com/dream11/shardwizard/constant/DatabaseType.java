@@ -7,7 +7,9 @@ public enum DatabaseType {
   MYSQL,
   POSTGRES,
   SPANNER,
-  DYNAMODB,
+  DYNAMO,
   REDIS,
-  AEROSPIKE
+  AEROSPIKE,
+
+  S3
 }

@@ -1,0 +1,13 @@
+{
+  "shardManager": {
+    "port": 8999,
+    "initScript": ""
+  },
+  "shards": [
+    { "port": 9111, "initScript": "" },
+    { "port": 9112, "initScript": "" }
+  ],
+  "userName": "",
+  "password": "",
+  "dbName": ""
+}

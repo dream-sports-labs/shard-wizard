@@ -1,6 +1,6 @@
 package com.dream11.shardwizard.config;
 
-import com.dream11.shardwizard.model.ShardConnectionParameters;
+import com.dream11.shardwizard.dto.ShardConnectionParameters;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -11,10 +11,11 @@ import java.util.stream.Collectors;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
   @JsonSubTypes.Type(value = S3Config.class, name = "S3"),
-  @JsonSubTypes.Type(value = SqlConfig.class, name = "POSTGRES")
+  @JsonSubTypes.Type(value = SqlConfig.class, name = "POSTGRES"),
+  @JsonSubTypes.Type(value = SqlConfig.class, name = "MYSQL"),
+  @JsonSubTypes.Type(value = DynamoConfig.class, name = "DYNAMO")
 })
 public abstract class SourceConfig {
-
   private final ObjectMapper objectMapper = new ObjectMapper();
 
   @JsonProperty("databaseDefaultShardConfigMap")

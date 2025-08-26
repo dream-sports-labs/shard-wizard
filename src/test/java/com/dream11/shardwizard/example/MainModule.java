@@ -1,6 +1,6 @@
 package com.dream11.shardwizard.example;
 
-import com.dream11.shardwizard.example.order.OrderAbstractDaoFactory;
+import com.dream11.shardwizard.example.order.OrderDaoFactory;
 import com.dream11.shardwizard.example.order.OrderDaoFactoryProvider;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
@@ -11,9 +11,7 @@ public class MainModule extends AbstractModule {
 
   @Override
   protected void configure() {
-    bind(OrderAbstractDaoFactory.class)
-        .toProvider(OrderDaoFactoryProvider.class)
-        .in(Singleton.class);
+    bind(OrderDaoFactory.class).toProvider(OrderDaoFactoryProvider.class).in(Singleton.class);
   }
 
   @Provides

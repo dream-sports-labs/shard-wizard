@@ -1,7 +1,1 @@
-{
-  "entityId": "1012",
-  "shardIds": [
-    1,
-    2
-  ]
-}
+{"entityId":"1012","shardIds":[1,2]}
