@@ -102,7 +102,7 @@ public abstract class AbstractDaoFactory<T> implements DaoFactory<T> {
   }
 
   private ShardDetails updateShardConnectionParams(ShardDetails shardDetails) {
-    String sourceType = String.valueOf(shardManagerConfig.getSourceType());
+    String sourceType = shardManagerConfig.getSourceType().name();
     String databaseType = shardDetails.getShardConfig().getDatabaseType().name();
     ShardConnectionParameters defaultConnectionParams =
         shardManagerConfig

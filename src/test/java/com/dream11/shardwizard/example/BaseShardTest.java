@@ -158,9 +158,6 @@ public abstract class BaseShardTest {
             .maxWaitQueueSize(DEFAULT_MAX_WAIT_QUEUE_SIZE)
             .connectionTimeoutMs(DEFAULT_CONNECTION_TIMEOUT_MS)
             .circuitBreaker(createCircuitBreakerConfig())
-            .tableConnectionMap(Map.of())
-            .accessKey("")
-            .secretKey("")
             .build();
     ShardConfig shardConfig =
         ShardConfig.builder()
