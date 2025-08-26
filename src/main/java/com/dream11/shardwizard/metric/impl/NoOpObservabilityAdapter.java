@@ -1,7 +1,7 @@
 package com.dream11.shardwizard.metric.impl;
 
-import com.dream11.shardwizard.dto.ObservabilityEvent;
 import com.dream11.shardwizard.metric.ObservabilityAdapter;
+import com.dream11.shardwizard.model.ObservabilityEvent;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 

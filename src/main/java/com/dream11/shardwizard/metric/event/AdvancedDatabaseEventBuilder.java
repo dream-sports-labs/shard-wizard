@@ -1,7 +1,7 @@
 package com.dream11.shardwizard.metric.event;
 
 import com.dream11.shardwizard.constant.RdsCluster;
-import com.dream11.shardwizard.dto.ObservabilityEvent;
+import com.dream11.shardwizard.model.ObservabilityEvent;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;

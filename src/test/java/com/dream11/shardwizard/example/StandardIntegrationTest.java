@@ -2,11 +2,11 @@ package com.dream11.shardwizard.example;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.dream11.shardwizard.dto.ShardDetails;
 import com.dream11.shardwizard.example.order.CreateOrderResponse;
 import com.dream11.shardwizard.example.order.OrderDto;
 import com.dream11.shardwizard.exception.EntityNotMappedToShardException;
 import com.dream11.shardwizard.exception.ShardNotPresentException;
+import com.dream11.shardwizard.model.ShardDetails;
 import io.reactivex.Single;
 import java.util.ArrayList;
 import java.util.List;

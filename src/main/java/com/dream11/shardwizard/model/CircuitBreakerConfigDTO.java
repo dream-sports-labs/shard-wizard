@@ -1,4 +1,4 @@
-package com.dream11.shardwizard.dto;
+package com.dream11.shardwizard.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.typesafe.config.Optional;

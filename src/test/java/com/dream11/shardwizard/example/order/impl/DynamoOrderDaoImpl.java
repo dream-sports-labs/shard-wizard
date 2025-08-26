@@ -3,10 +3,10 @@ package com.dream11.shardwizard.example.order.impl;
 import static com.dream11.shardwizard.example.helpers.Constants.TABLE_NAME;
 
 import com.dream11.shardwizard.dao.impl.DynamoBaseDao;
-import com.dream11.shardwizard.dto.ShardDetails;
 import com.dream11.shardwizard.example.order.CreateOrderResponse;
 import com.dream11.shardwizard.example.order.OrderDao;
 import com.dream11.shardwizard.example.order.OrderDto;
+import com.dream11.shardwizard.model.ShardDetails;
 import io.reactivex.Single;
 import io.vertx.reactivex.core.Vertx;
 import io.vertx.reactivex.sqlclient.SqlConnection;

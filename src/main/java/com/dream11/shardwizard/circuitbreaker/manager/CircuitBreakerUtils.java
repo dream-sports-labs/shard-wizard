@@ -2,8 +2,8 @@ package com.dream11.shardwizard.circuitbreaker.manager;
 
 import com.dream11.shardwizard.circuitbreaker.exception.CircuitBreakerOpenException;
 import com.dream11.shardwizard.constant.Constants;
-import com.dream11.shardwizard.dto.ObservabilityEvent;
 import com.dream11.shardwizard.metric.ObservabilityServiceFactory;
+import com.dream11.shardwizard.model.ObservabilityEvent;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.reactivex.Completable;
 import io.reactivex.Single;

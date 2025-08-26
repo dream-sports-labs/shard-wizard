@@ -83,8 +83,8 @@ public class OrderAbstractDaoFactoryConfigTest extends BaseShardTest {
   private void runShardDetailsTest(
       int roundId, CountDownLatch latch, AtomicReference<Throwable> error) {
     List<ShardDetails> expectedShardDetails = new ArrayList<>();
-    expectedShardDetails.add(createPOSTGresShard(1, 5433));
-    expectedShardDetails.add(createPOSTGresShard(2, 5434));
+    expectedShardDetails.add(createPostgresShard(1, 5433));
+    expectedShardDetails.add(createPostgresShard(2, 5434));
 
     orderDaoFactory
         .rxGetOrCreateEntityShardDetails(Integer.toString(roundId))

@@ -2,7 +2,7 @@ package com.dream11.shardwizard.example.order;
 
 import com.dream11.shardwizard.constant.DatabaseType;
 import com.dream11.shardwizard.dao.AbstractDaoFactory;
-import com.dream11.shardwizard.example.order.impl.CustomDatabaseOrderDaoImpl;
+import com.dream11.shardwizard.example.order.impl.DynamoOrderDaoImpl;
 import com.dream11.shardwizard.example.order.impl.PostgresOrderDaoImpl;
 import com.dream11.shardwizard.model.ShardDetails;
 import io.vertx.reactivex.core.Vertx;
@@ -21,8 +21,8 @@ public class OrderAbstractDaoFactory extends AbstractDaoFactory<OrderDao> {
     switch (databaseType) {
       case POSTGRES:
         return new PostgresOrderDaoImpl(vertx, shardDetails);
-      case DYNAMODB:
-        return new CustomDatabaseOrderDaoImpl(vertx, shardDetails);
+      case DYNAMO:
+        return new DynamoOrderDaoImpl(vertx, shardDetails);
       default:
         throw new IllegalArgumentException("Invalid database type");
     }

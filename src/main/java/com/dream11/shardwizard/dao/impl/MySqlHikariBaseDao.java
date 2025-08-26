@@ -1,8 +1,8 @@
 package com.dream11.shardwizard.dao.impl;
 
 import com.dream11.shardwizard.dao.BaseDaoAbstract;
-import com.dream11.shardwizard.dto.ShardConnectionParameters;
-import com.dream11.shardwizard.dto.ShardDetails;
+import com.dream11.shardwizard.model.ShardConnectionParameters;
+import com.dream11.shardwizard.model.ShardDetails;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import io.reactivex.Completable;

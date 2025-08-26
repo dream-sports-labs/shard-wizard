@@ -1,10 +1,10 @@
 package com.dream11.shardwizard.example.order.impl;
 
 import com.dream11.shardwizard.dao.BaseDaoAbstract;
-import com.dream11.shardwizard.dto.ShardDetails;
 import com.dream11.shardwizard.example.order.CreateOrderResponse;
 import com.dream11.shardwizard.example.order.OrderDao;
 import com.dream11.shardwizard.example.order.OrderDto;
+import com.dream11.shardwizard.model.ShardDetails;
 import io.reactivex.Completable;
 import io.reactivex.Single;
 import io.vertx.reactivex.core.Vertx;

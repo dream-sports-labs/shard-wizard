@@ -2,8 +2,8 @@ package com.dream11.shardwizard.metric.agent;
 
 import static org.junit.Assert.*;
 
-import com.dream11.shardwizard.dto.ObservabilityEvent;
 import com.dream11.shardwizard.metric.impl.DatadogObservabilityAdapter;
+import com.dream11.shardwizard.model.ObservabilityEvent;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.Before;

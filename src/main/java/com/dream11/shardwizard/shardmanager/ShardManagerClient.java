@@ -1,11 +1,11 @@
 package com.dream11.shardwizard.shardmanager;
 
 import com.dream11.shardwizard.config.ShardManagerConfig;
-import com.dream11.shardwizard.dto.EntityShardDetailsMapping;
-import com.dream11.shardwizard.dto.ShardConfig;
-import com.dream11.shardwizard.dto.ShardDetails;
-import com.dream11.shardwizard.dto.ShardManagerResponse;
-import com.dream11.shardwizard.dto.ShardUpdateResponse;
+import com.dream11.shardwizard.model.EntityShardDetailsMapping;
+import com.dream11.shardwizard.model.ShardConfig;
+import com.dream11.shardwizard.model.ShardDetails;
+import com.dream11.shardwizard.model.ShardManagerResponse;
+import com.dream11.shardwizard.model.ShardUpdateResponse;
 import com.dream11.shardwizard.shardmanager.impl.ShardManagerFactory;
 import io.reactivex.Completable;
 import io.reactivex.Single;

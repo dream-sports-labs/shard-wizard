@@ -3,10 +3,10 @@ package com.dream11.shardwizard.example.mysql;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import com.dream11.shardwizard.dto.ShardDetails;
 import com.dream11.shardwizard.example.BaseShardTest;
 import com.dream11.shardwizard.example.order.CreateOrderResponse;
 import com.dream11.shardwizard.example.order.OrderDto;
+import com.dream11.shardwizard.model.ShardDetails;
 import io.reactivex.Observable;
 import io.reactivex.Single;
 import java.util.ArrayList;

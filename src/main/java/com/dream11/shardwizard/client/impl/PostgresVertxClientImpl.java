@@ -6,7 +6,7 @@ import static com.dream11.shardwizard.constant.PostgresQueries.SHOW_TRANSACTION_
 import com.dream11.shardwizard.circuitbreaker.client.AbstractCircuitBreakerClient;
 import com.dream11.shardwizard.client.PostgresVertxClient;
 import com.dream11.shardwizard.constant.RdsCluster;
-import com.dream11.shardwizard.dto.ShardDetails;
+import com.dream11.shardwizard.model.ShardDetails;
 import io.reactivex.Completable;
 import io.reactivex.Single;
 import io.vertx.pgclient.PgConnectOptions;

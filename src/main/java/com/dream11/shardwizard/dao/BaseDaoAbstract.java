@@ -1,6 +1,6 @@
 package com.dream11.shardwizard.dao;
 
-import com.dream11.shardwizard.dto.ShardDetails;
+import com.dream11.shardwizard.model.ShardDetails;
 import io.reactivex.Completable;
 
 public abstract class BaseDaoAbstract {

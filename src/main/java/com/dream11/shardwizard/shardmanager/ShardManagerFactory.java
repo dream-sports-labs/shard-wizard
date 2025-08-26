@@ -50,7 +50,7 @@ public class ShardManagerFactory {
   public static ShardManagerClient getShardManagerClient(
       Vertx vertx, ShardManagerConfig shardManagerConfig) {
     if (Objects.isNull(instance)) {
-      String sourceType = shardManagerConfig.getSourceType();
+      String sourceType = String.valueOf(shardManagerConfig.getSourceType());
       switch (sourceType) {
         case "POSTGRES":
           instance =

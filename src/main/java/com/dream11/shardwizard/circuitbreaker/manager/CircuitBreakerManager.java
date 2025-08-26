@@ -1,6 +1,6 @@
 package com.dream11.shardwizard.circuitbreaker.manager;
 
-import com.dream11.shardwizard.dto.CircuitBreakerConfigDTO;
+import com.dream11.shardwizard.model.CircuitBreakerConfigDTO;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig.SlidingWindowType;

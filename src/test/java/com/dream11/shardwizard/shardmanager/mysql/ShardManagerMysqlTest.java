@@ -4,9 +4,9 @@ import static org.junit.Assert.*;
 import static org.junit.Assert.fail;
 
 import com.dream11.shardwizard.constant.DatabaseType;
-import com.dream11.shardwizard.dto.ShardConfig;
-import com.dream11.shardwizard.dto.ShardConnectionParameters;
-import com.dream11.shardwizard.dto.ShardUpdateResponse;
+import com.dream11.shardwizard.model.ShardConfig;
+import com.dream11.shardwizard.model.ShardConnectionParameters;
+import com.dream11.shardwizard.model.ShardUpdateResponse;
 import com.dream11.shardwizard.shardmanager.ShardManagerClient;
 import com.dream11.shardwizard.shardmanager.ShardManagerTestSetup;
 import com.dream11.shardwizard.shardmanager.utils.ConfigUpdater;

@@ -1,15 +1,15 @@
 package com.dream11.shardwizard.example.order;
 
 import com.dream11.shardwizard.constant.DatabaseType;
-import com.dream11.shardwizard.dao.DaoFactory;
-import com.dream11.shardwizard.dto.ShardDetails;
+import com.dream11.shardwizard.dao.AbstractDaoFactory;
 import com.dream11.shardwizard.example.order.impl.DynamoOrderDaoImpl;
 import com.dream11.shardwizard.example.order.impl.MySqlOrderDaoImpl;
 import com.dream11.shardwizard.example.order.impl.PostgresOrderDaoImpl;
+import com.dream11.shardwizard.model.ShardDetails;
 import io.vertx.reactivex.core.Vertx;
 import lombok.NonNull;
 
-public class OrderDaoFactory extends DaoFactory<OrderDao> {
+public class OrderDaoFactory extends AbstractDaoFactory<OrderDao> {
 
   public OrderDaoFactory(Vertx vertx) {
     super(vertx);

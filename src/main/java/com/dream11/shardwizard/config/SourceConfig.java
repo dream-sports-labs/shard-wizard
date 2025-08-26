@@ -1,6 +1,6 @@
 package com.dream11.shardwizard.config;
 
-import com.dream11.shardwizard.dto.ShardConnectionParameters;
+import com.dream11.shardwizard.model.ShardConnectionParameters;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;

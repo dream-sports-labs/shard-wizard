@@ -2,8 +2,8 @@ package com.dream11.shardwizard.circuitbreaker.client;
 
 import com.dream11.shardwizard.circuitbreaker.CircuitBreakerEnabledClient;
 import com.dream11.shardwizard.circuitbreaker.manager.CircuitBreakerManager;
-import com.dream11.shardwizard.dto.CircuitBreakerConfigDTO;
-import com.dream11.shardwizard.dto.ShardDetails;
+import com.dream11.shardwizard.model.CircuitBreakerConfigDTO;
+import com.dream11.shardwizard.model.ShardDetails;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 
 /**

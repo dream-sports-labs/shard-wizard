@@ -1,7 +1,7 @@
 package com.dream11.shardwizard.metric;
 
-import com.dream11.shardwizard.dto.ObservabilityEvent;
-import com.dream11.shardwizard.dto.ObservabilityEvent.*;
+import com.dream11.shardwizard.model.ObservabilityEvent;
+import com.dream11.shardwizard.model.ObservabilityEvent.*;
 import java.util.Map;
 
 public interface ObservabilityService {

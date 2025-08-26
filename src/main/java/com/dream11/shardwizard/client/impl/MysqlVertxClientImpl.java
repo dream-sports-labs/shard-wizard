@@ -7,8 +7,8 @@ import static com.dream11.shardwizard.constant.MySqlQueries.SHOW_VARIABLES_READ_
 import com.dream11.shardwizard.circuitbreaker.client.AbstractCircuitBreakerClient;
 import com.dream11.shardwizard.client.MysqlVertxClient;
 import com.dream11.shardwizard.constant.RdsCluster;
-import com.dream11.shardwizard.dto.ShardDetails;
 import com.dream11.shardwizard.metric.event.DatabaseEventRecorder;
+import com.dream11.shardwizard.model.ShardDetails;
 import io.reactivex.Completable;
 import io.reactivex.Single;
 import io.vertx.mysqlclient.MySQLConnectOptions;

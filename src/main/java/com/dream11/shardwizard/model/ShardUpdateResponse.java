@@ -1,4 +1,4 @@
-package com.dream11.shardwizard.dto;
+package com.dream11.shardwizard.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

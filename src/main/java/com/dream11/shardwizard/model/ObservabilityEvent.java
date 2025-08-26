@@ -1,4 +1,4 @@
-package com.dream11.shardwizard.dto;
+package com.dream11.shardwizard.model;
 
 import java.util.Map;
 import lombok.Builder;
