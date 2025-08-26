@@ -1,10 +1,15 @@
 package com.dream11.shardwizard.client.impl.postgres.hikari;
 
 import static com.dream11.shardwizard.constant.Constants.CHECK_READONLY_MODE_INTERVAL_SECONDS;
-import static com.dream11.shardwizard.shardmanager.impl.postgres.PostgresQueries.SHOW_TRANSACTION_READ_ONLY;
+import static com.dream11.shardwizard.constant.Constants.Metric.*;
+import static com.dream11.shardwizard.constant.PostgresQueries.SHOW_TRANSACTION_READ_ONLY;
 
-import com.dream11.shardwizard.client.impl.common.RdsCluster;
-import com.dream11.shardwizard.utils.ExceptionalFunction;
+import com.dream11.shardwizard.circuitbreaker.client.AbstractCircuitBreakerClient;
+import com.dream11.shardwizard.config.PostgresHikariConfig;
+import com.dream11.shardwizard.constant.ExceptionalFunction;
+import com.dream11.shardwizard.constant.RdsCluster;
+import com.dream11.shardwizard.metric.event.DatabaseEventRecorder;
+import com.dream11.shardwizard.model.ShardDetails;
 import com.zaxxer.hikari.HikariDataSource;
 import io.reactivex.Completable;
 import io.reactivex.Single;
@@ -29,7 +34,8 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class PostgresHikariClientImpl implements PostgresHikariClient {
+public class PostgresHikariClientImpl extends AbstractCircuitBreakerClient
+    implements PostgresHikariClient {
 
   private final PostgresHikariConfig postgresHikariConfig;
   private final Vertx vertx;
@@ -37,8 +43,11 @@ public class PostgresHikariClientImpl implements PostgresHikariClient {
   private HikariDataSource masterDataSource;
   private HikariDataSource slaveDataSource;
   private ScheduledExecutorService executorService;
+  private final DatabaseEventRecorder eventRecorder = DatabaseEventRecorder.getInstance();
 
-  public PostgresHikariClientImpl(Vertx vertx, PostgresHikariConfig postgresHikariConfig) {
+  public PostgresHikariClientImpl(
+      Vertx vertx, PostgresHikariConfig postgresHikariConfig, ShardDetails shardDetails) {
+    super(shardDetails);
     this.vertx = vertx;
     this.postgresHikariConfig = postgresHikariConfig;
   }
@@ -54,6 +63,7 @@ public class PostgresHikariClientImpl implements PostgresHikariClient {
             executorService = Executors.newSingleThreadScheduledExecutor();
             promise.complete();
           } catch (Exception e) {
+            eventRecorder.recordError(DB_CONNECT, e);
             promise.fail(e);
           }
         },
@@ -65,6 +75,7 @@ public class PostgresHikariClientImpl implements PostgresHikariClient {
                 CHECK_READONLY_MODE_INTERVAL_SECONDS,
                 TimeUnit.SECONDS);
             log.info("Successfully created master and slave");
+            eventRecorder.recordSuccess(DB_CONNECT);
             handler.handle(Future.succeededFuture());
           } else {
             handler.handle(Future.failedFuture(asyncResult.cause()));
@@ -90,8 +101,9 @@ public class PostgresHikariClientImpl implements PostgresHikariClient {
   private String getReadOnlyInformation() {
     try (Connection connection = getConnection(RdsCluster.WRITER);
         PreparedStatement preparedStatement =
-            connection.prepareStatement(SHOW_TRANSACTION_READ_ONLY);
-        CachedRowSet cachedRowSet = RowSetProvider.newFactory().createCachedRowSet(); ) {
+            connection.prepareStatement(SHOW_TRANSACTION_READ_ONLY)) {
+      RowSetFactory factory = RowSetProvider.newFactory();
+      CachedRowSet cachedRowSet = factory.createCachedRowSet();
       cachedRowSet.populate(preparedStatement.executeQuery());
       cachedRowSet.next();
       return cachedRowSet.getString("transaction_read_only");
@@ -103,7 +115,7 @@ public class PostgresHikariClientImpl implements PostgresHikariClient {
 
   @Override
   public Completable rxConnect() {
-    return AsyncResultCompletable.toCompletable(this::connect);
+    return withCircuitBreaker(AsyncResultCompletable.toCompletable(this::connect));
   }
 
   @SneakyThrows
@@ -116,7 +128,11 @@ public class PostgresHikariClientImpl implements PostgresHikariClient {
 
   @Override
   public Single<ResultSet> rxReadDBCall(RdsCluster cluster, String query, List<Object> params) {
-    return AsyncResultSingle.toSingle(handler -> readDBCall(query, params, cluster, handler));
+    return withCircuitBreaker(
+            AsyncResultSingle.<ResultSet>toSingle(
+                handler -> readDBCall(query, params, cluster, handler)))
+        .doOnSuccess(rows -> eventRecorder.recordSuccess(DB_QUERY_READ, cluster, query))
+        .doOnError(error -> eventRecorder.recordError(DB_QUERY_READ, cluster, query, error));
   }
 
   private void readDBCall(
@@ -153,7 +169,11 @@ public class PostgresHikariClientImpl implements PostgresHikariClient {
 
   @Override
   public Single<Integer> rxModifyDBCall(String query, List<Object> params) {
-    return AsyncResultSingle.toSingle(handler -> modifyDBCall(query, params, handler));
+    return withCircuitBreaker(
+            AsyncResultSingle.<Integer>toSingle(handler -> modifyDBCall(query, params, handler)))
+        .doOnSuccess(rows -> eventRecorder.recordSuccess(DB_QUERY_MODIFY, RdsCluster.WRITER, query))
+        .doOnError(
+            error -> eventRecorder.recordError(DB_QUERY_MODIFY, RdsCluster.WRITER, query, error));
   }
 
   private void modifyDBCall(
@@ -185,8 +205,14 @@ public class PostgresHikariClientImpl implements PostgresHikariClient {
 
   @Override
   public Single<Integer> rxModifyBatchDBCall(String query, List<List<Object>> paramsBatch) {
-    return AsyncResultSingle.toSingle(
-        handler -> batchDBCall(query, paramsBatch, RdsCluster.WRITER, handler));
+    return withCircuitBreaker(
+            AsyncResultSingle.<Integer>toSingle(
+                handler -> batchDBCall(query, paramsBatch, RdsCluster.WRITER, handler)))
+        .doOnSuccess(
+            rows -> eventRecorder.recordSuccess(DB_BATCH_QUERY_MODIFY, RdsCluster.WRITER, query))
+        .doOnError(
+            error ->
+                eventRecorder.recordError(DB_BATCH_QUERY_MODIFY, RdsCluster.WRITER, query, error));
   }
 
   private void batchDBCall(
@@ -222,23 +248,24 @@ public class PostgresHikariClientImpl implements PostgresHikariClient {
 
   @Override
   public Completable rxClose() {
-    return AsyncResultCompletable.toCompletable(t -> close());
+    return withCircuitBreaker(AsyncResultCompletable.toCompletable(t -> close()));
   }
 
   @Override
   public <T> Single<T> rxGetConnectionForTxn(ExceptionalFunction<Connection, T> codeFunction) {
-    return Vertx.currentContext()
-        .<T>rxExecuteBlocking(
-            promise -> {
-              try (Connection connection = getConnection(RdsCluster.WRITER)) {
-                T result = executeFunctionAndGetResult(codeFunction, connection);
-                promise.complete(result);
-              } catch (Exception e) {
-                promise.fail(e);
-              }
-            },
-            false)
-        .toSingle();
+    return withCircuitBreaker(
+        Vertx.currentContext()
+            .<T>rxExecuteBlocking(
+                promise -> {
+                  try (Connection connection = getConnection(RdsCluster.WRITER)) {
+                    T result = executeFunctionAndGetResult(codeFunction, connection);
+                    promise.complete(result);
+                  } catch (Exception e) {
+                    promise.fail(e);
+                  }
+                },
+                false)
+            .toSingle());
   }
 
   private <T> T executeFunctionAndGetResult(

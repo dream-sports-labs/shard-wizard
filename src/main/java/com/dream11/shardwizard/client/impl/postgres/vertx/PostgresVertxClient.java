@@ -1,6 +1,6 @@
 package com.dream11.shardwizard.client.impl.postgres.vertx;
 
-import com.dream11.shardwizard.client.impl.common.RdsCluster;
+import com.dream11.shardwizard.constant.RdsCluster;
 import io.reactivex.Completable;
 import io.reactivex.Single;
 import io.vertx.reactivex.sqlclient.Row;

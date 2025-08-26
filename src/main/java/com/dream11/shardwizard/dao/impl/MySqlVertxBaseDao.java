@@ -1,7 +1,7 @@
 package com.dream11.shardwizard.dao.impl;
 
-import com.dream11.shardwizard.client.MysqlVertxClient;
-import com.dream11.shardwizard.client.impl.MysqlVertxClientImpl;
+import com.dream11.shardwizard.client.impl.mysql.MysqlVertxClient;
+import com.dream11.shardwizard.client.impl.mysql.MysqlVertxClientImpl;
 import com.dream11.shardwizard.dao.BaseDaoAbstract;
 import com.dream11.shardwizard.model.ShardConnectionParameters;
 import com.dream11.shardwizard.model.ShardDetails;

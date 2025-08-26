@@ -1,7 +1,6 @@
-package com.dream11.shardwizard.client.impl;
+package com.dream11.shardwizard.client.impl.dynamo;
 
 import com.dream11.shardwizard.circuitbreaker.client.AbstractCircuitBreakerClient;
-import com.dream11.shardwizard.client.DynamoVertxClient;
 import com.dream11.shardwizard.model.ShardDetails;
 import io.reactivex.Completable;
 import io.reactivex.Single;

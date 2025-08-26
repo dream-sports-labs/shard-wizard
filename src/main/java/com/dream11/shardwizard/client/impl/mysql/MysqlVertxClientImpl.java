@@ -1,11 +1,10 @@
-package com.dream11.shardwizard.client.impl;
+package com.dream11.shardwizard.client.impl.mysql;
 
 import static com.dream11.shardwizard.constant.Constants.CHECK_READONLY_MODE_INTERVAL_SECONDS;
 import static com.dream11.shardwizard.constant.Constants.Metric.*;
 import static com.dream11.shardwizard.constant.MySqlQueries.SHOW_VARIABLES_READ_ONLY;
 
 import com.dream11.shardwizard.circuitbreaker.client.AbstractCircuitBreakerClient;
-import com.dream11.shardwizard.client.MysqlVertxClient;
 import com.dream11.shardwizard.constant.RdsCluster;
 import com.dream11.shardwizard.metric.event.DatabaseEventRecorder;
 import com.dream11.shardwizard.model.ShardDetails;

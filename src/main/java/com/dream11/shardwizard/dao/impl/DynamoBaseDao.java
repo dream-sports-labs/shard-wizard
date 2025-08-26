@@ -1,7 +1,7 @@
 package com.dream11.shardwizard.dao.impl;
 
-import com.dream11.shardwizard.client.DynamoVertxClient;
-import com.dream11.shardwizard.client.impl.DynamoVertxClientImpl;
+import com.dream11.shardwizard.client.impl.dynamo.DynamoVertxClient;
+import com.dream11.shardwizard.client.impl.dynamo.DynamoVertxClientImpl;
 import com.dream11.shardwizard.dao.BaseDaoAbstract;
 import com.dream11.shardwizard.model.ShardConnectionParameters;
 import com.dream11.shardwizard.model.ShardDetails;

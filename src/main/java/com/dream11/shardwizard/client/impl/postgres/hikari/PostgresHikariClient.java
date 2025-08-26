@@ -1,7 +1,7 @@
 package com.dream11.shardwizard.client.impl.postgres.hikari;
 
-import com.dream11.shardwizard.client.impl.common.RdsCluster;
-import com.dream11.shardwizard.utils.ExceptionalFunction;
+import com.dream11.shardwizard.constant.ExceptionalFunction;
+import com.dream11.shardwizard.constant.RdsCluster;
 import io.reactivex.Completable;
 import io.reactivex.Single;
 import java.sql.Connection;

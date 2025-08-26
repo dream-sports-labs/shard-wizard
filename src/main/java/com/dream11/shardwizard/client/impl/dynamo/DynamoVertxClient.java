@@ -1,4 +1,4 @@
-package com.dream11.shardwizard.client;
+package com.dream11.shardwizard.client.impl.dynamo;
 
 import io.reactivex.Completable;
 import io.reactivex.Single;
