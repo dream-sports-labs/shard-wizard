@@ -201,5 +201,4 @@ public class MySqlOrderDaoImpl extends MySqlVertxBaseDao implements OrderDao {
                       });
             });
   }
-  ;
 }

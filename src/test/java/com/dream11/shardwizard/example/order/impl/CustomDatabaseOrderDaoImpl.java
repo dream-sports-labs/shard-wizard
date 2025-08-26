@@ -88,7 +88,6 @@ public class CustomDatabaseOrderDaoImpl extends BaseDaoAbstract
   public Single<CreateOrderResponse> rxExecuteQuery(OrderDto orderDto) {
     return null;
   }
-  ;
 
   @Override
   public Single<Boolean> update(OrderDto orderDto) {

@@ -132,5 +132,4 @@ public class PostgresOrderDaoImpl extends PostgresBaseDao implements OrderDao {
   public Single<CreateOrderResponse> rxExecuteQuery(OrderDto orderDto) {
     return null;
   }
-  ;
 }
