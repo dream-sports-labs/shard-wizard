@@ -43,7 +43,7 @@
     <mockito.version>3.4.0</mockito.version>
     <config.version>1.3.2</config.version>
     <commons-lang3.version>3.9</commons-lang3.version>
-    <git-code-format-maven-plugin.version>2.7</git-code-format-maven-plugin.version>
+    <git-code-format-maven-plugin.version>5.1</git-code-format-maven-plugin.version>
     <vertx.completable.future.version>0.1.2</vertx.completable.future.version>
     <lombok.version>1.18.24</lombok.version>
     <resilience4j.version>1.7.1</resilience4j.version>
@@ -362,6 +362,51 @@
       <!--        <groupId>com.cosium.code</groupId>-->
       <!--        <version>${git-code-format-maven-plugin.version}</version>-->
       <!--      </plugin>-->
+
+      <plugin>
+        <groupId>com.cosium.code</groupId>
+        <artifactId>git-code-format-maven-plugin</artifactId>
+        <version>${git-code-format-maven-plugin.version}</version>
+        <executions>
+          <!-- On commit, format the modified files -->
+          <execution>
+            <id>install-formatter-hook</id>
+            <goals>
+              <goal>install-hooks</goal>
+            </goals>
+          </execution>
+          <!-- On Maven verify phase, fail if any file
+          (including unmodified) is badly formatted -->
+          <execution>
+            <id>validate-code-format</id>
+            <goals>
+              <goal>validate-code-format</goal>
+            </goals>
+          </execution>
+        </executions>
+        <dependencies>
+          <!-- Enable https://github.com/google/google-java-format -->
+          <dependency>
+            <groupId>com.cosium.code</groupId>
+            <artifactId>google-java-format</artifactId>
+            <version>${git-code-format-maven-plugin.version}</version>
+          </dependency>
+        </dependencies>
+        <configuration>
+          <formatterOptions>
+            <!-- Use AOSP style instead of Google Style (4-space indentation). -->
+            <googleJavaFormat.aosp>false</googleJavaFormat.aosp>
+            <!-- Format the javadoc -->
+            <googleJavaFormat.formatJavadoc>true</googleJavaFormat.formatJavadoc>
+            <!-- Fix import order and remove any unused imports, but do no other formatting. -->
+            <googleJavaFormat.fixImportsOnly>false</googleJavaFormat.fixImportsOnly>
+            <!-- Do not fix the import order. Unused imports will still be removed. -->
+            <googleJavaFormat.skipSortingImports>false</googleJavaFormat.skipSortingImports>
+            <!-- Remove unused imports. Imports will still be sorted. -->
+            <googleJavaFormat.skipRemovingUnusedImports>false</googleJavaFormat.skipRemovingUnusedImports>
+          </formatterOptions>
+        </configuration>
+      </plugin>
 
       <plugin>
         <groupId>org.jacoco</groupId>
