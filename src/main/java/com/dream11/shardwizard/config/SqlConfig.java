@@ -9,7 +9,7 @@ import lombok.NonNull;
 public class SqlConfig extends SourceConfig {
   @NonNull private String writerHost;
   @NonNull private String readerHost;
-  @NonNull private int port;
+  private int port;
   @NonNull private String database;
   @NonNull private String username;
   @NonNull private String password;

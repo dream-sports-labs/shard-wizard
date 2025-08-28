@@ -1,4 +1,4 @@
-package com.dream11.shardwizard.client.impl.postgres.hikari;
+package com.dream11.shardwizard.client.postgres.hikari;
 
 import com.typesafe.config.Optional;
 import com.zaxxer.hikari.HikariConfig;

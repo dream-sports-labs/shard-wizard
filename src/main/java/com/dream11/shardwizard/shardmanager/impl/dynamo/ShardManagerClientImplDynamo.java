@@ -1,4 +1,4 @@
-package com.dream11.shardwizard.shardmanager.impl;
+package com.dream11.shardwizard.shardmanager.impl.dynamo;
 
 import com.dream11.shardwizard.config.DynamoConfig;
 import com.dream11.shardwizard.constant.DatabaseType;

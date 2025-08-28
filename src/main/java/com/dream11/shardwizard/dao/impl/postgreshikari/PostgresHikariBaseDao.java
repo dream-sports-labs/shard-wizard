@@ -1,7 +1,7 @@
 package com.dream11.shardwizard.dao.impl.postgreshikari;
 
-import com.dream11.shardwizard.client.impl.postgres.hikari.PostgresHikariClient;
-import com.dream11.shardwizard.client.impl.postgres.hikari.PostgresHikariClientImpl;
+import com.dream11.shardwizard.client.postgres.hikari.PostgresHikariClient;
+import com.dream11.shardwizard.client.postgres.hikari.PostgresHikariClientImpl;
 import com.dream11.shardwizard.config.PostgresHikariConfig;
 import com.dream11.shardwizard.constant.RdsCluster;
 import com.dream11.shardwizard.dao.BaseDaoAbstract;

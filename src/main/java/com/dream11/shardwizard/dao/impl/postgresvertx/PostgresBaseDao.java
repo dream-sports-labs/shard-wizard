@@ -1,7 +1,7 @@
 package com.dream11.shardwizard.dao.impl.postgresvertx;
 
-import com.dream11.shardwizard.client.impl.postgres.vertx.PostgresVertxClient;
-import com.dream11.shardwizard.client.impl.postgres.vertx.PostgresVertxClientImpl;
+import com.dream11.shardwizard.client.postgres.vertx.PostgresVertxClient;
+import com.dream11.shardwizard.client.postgres.vertx.PostgresVertxClientImpl;
 import com.dream11.shardwizard.dao.BaseDaoAbstract;
 import com.dream11.shardwizard.model.ShardConnectionParameters;
 import com.dream11.shardwizard.model.ShardDetails;

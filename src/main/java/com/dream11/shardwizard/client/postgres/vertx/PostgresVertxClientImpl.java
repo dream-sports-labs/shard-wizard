@@ -1,4 +1,4 @@
-package com.dream11.shardwizard.client.impl.postgres.vertx;
+package com.dream11.shardwizard.client.postgres.vertx;
 
 import static com.dream11.shardwizard.constant.Constants.CHECK_READONLY_MODE_INTERVAL_SECONDS;
 import static com.dream11.shardwizard.constant.PostgresQueries.SHOW_TRANSACTION_READ_ONLY;

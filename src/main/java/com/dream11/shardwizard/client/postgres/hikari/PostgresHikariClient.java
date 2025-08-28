@@ -1,4 +1,4 @@
-package com.dream11.shardwizard.client.impl.postgres.hikari;
+package com.dream11.shardwizard.client.postgres.hikari;
 
 import com.dream11.shardwizard.constant.ExceptionalFunction;
 import com.dream11.shardwizard.constant.RdsCluster;

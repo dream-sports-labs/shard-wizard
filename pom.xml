@@ -9,7 +9,9 @@
   <version>0.0.2</version>
   <packaging>jar</packaging>
   <name>Shard Wizard</name>
-  <description>Vert.x library for scalable shard management and routing of entities across multiple shards</description>
+  <description>Vert.x library for scalable shard management and routing of entities across multiple
+    shards
+  </description>
   <url>https://github.com/dream-sports-labs/shard-wizard</url>
 
   <licenses>
@@ -23,7 +25,8 @@
   <scm>
     <url>https://github.com/dream-sports-labs/shard-wizard</url>
     <connection>scm:git:git://github.com/dream-sports-labs/shard-wizard.git</connection>
-    <developerConnection>scm:git:ssh://github.com/dream-sports-labs/shard-wizard.git</developerConnection>
+    <developerConnection>scm:git:ssh://github.com/dream-sports-labs/shard-wizard.git
+    </developerConnection>
   </scm>
 
   <developers>
@@ -66,6 +69,19 @@
     <luaj-jse.version>3.0.1</luaj-jse.version>
     <maven.nexus.plugin.version>1.7.0</maven.nexus.plugin.version>
     <maven.gpg.plugin.version>3.2.7</maven.gpg.plugin.version>
+    <maven.source.plugin.version>3.2.1</maven.source.plugin.version>
+    <maven.javadoc.plugin.version>3.5.0</maven.javadoc.plugin.version>
+    <maven.gpg.plugin.version>3.1.0</maven.gpg.plugin.version>
+    <maven.dependency.plugin.version>3.1.2</maven.dependency.plugin.version>
+    <maven.surefire.plugin.version>3.2.5</maven.surefire.plugin.version>
+    <junit.jupiter.version>5.8.2</junit.jupiter.version>
+    <central.publishing.plugin.version>0.8.0</central.publishing.plugin.version>
+    <jacoco.plugin.version>0.8.12</jacoco.plugin.version>
+    <commons.csv.version>1.10.0</commons.csv.version>
+    <aws.crt.client.version>2.31.14</aws.crt.client.version>
+    <mysql.connector.version>8.0.33</mysql.connector.version>
+    <dynamodb.version>2.31.14</dynamodb.version>
+    <dogstatsd.client.version>4.2.0</dogstatsd.client.version>
   </properties>
 
   <dependencies>
@@ -98,7 +114,7 @@
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-csv</artifactId>
-      <version>1.10.0</version>
+      <version>${commons.csv.version}</version>
     </dependency>
 
     <dependency>
@@ -143,7 +159,7 @@
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>aws-crt-client</artifactId>
-      <version>2.31.14</version>
+      <version>${aws.crt.client.version}</version>
     </dependency>
 
     <dependency>
@@ -156,14 +172,14 @@
     <dependency>
       <groupId>mysql</groupId>
       <artifactId>mysql-connector-java</artifactId>
-      <version>8.0.33</version>
+      <version>${mysql.connector.version}</version>
       <scope>test</scope>
     </dependency>
 
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>dynamodb</artifactId>
-      <version>2.31.14</version>
+      <version>${dynamodb.version}</version>
     </dependency>
 
     <dependency>
@@ -219,7 +235,7 @@
     <dependency>
       <groupId>com.datadoghq</groupId>
       <artifactId>java-dogstatsd-client</artifactId>
-      <version>4.2.0</version>
+      <version>${dogstatsd.client.version}</version>
     </dependency>
 
     <dependency>
@@ -286,11 +302,13 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-source-plugin</artifactId>
-        <version>3.2.1</version>
+        <version>${maven.source.plugin.version}</version>
         <executions>
           <execution>
             <id>attach-sources</id>
-            <goals><goal>jar</goal></goals>
+            <goals>
+              <goal>jar</goal>
+            </goals>
           </execution>
         </executions>
       </plugin>
@@ -299,14 +317,16 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
-        <version>3.5.0</version>
+        <version>${maven.javadoc.plugin.version}</version>
         <configuration>
           <failOnError>false</failOnError>
         </configuration>
         <executions>
           <execution>
             <id>attach-javadocs</id>
-            <goals><goal>jar</goal></goals>
+            <goals>
+              <goal>jar</goal>
+            </goals>
           </execution>
         </executions>
       </plugin>
@@ -315,53 +335,17 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-gpg-plugin</artifactId>
-        <version>3.1.0</version>
+        <version>${maven.gpg.plugin.version}</version>
         <executions>
           <execution>
             <id>sign-artifacts</id>
             <phase>verify</phase>
-            <goals><goal>sign</goal></goals>
+            <goals>
+              <goal>sign</goal>
+            </goals>
           </execution>
         </executions>
       </plugin>
-
-      <!--      <plugin>-->
-      <!--        <artifactId>git-code-format-maven-plugin</artifactId>-->
-      <!--        <configuration>-->
-      <!--          <googleJavaFormatOptions>-->
-      <!--            <fixImportsOnly>false</fixImportsOnly>-->
-      <!--            <skipSortingImports>false</skipSortingImports>-->
-      <!--            <skipRemovingUnusedImports>false</skipRemovingUnusedImports>-->
-      <!--          </googleJavaFormatOptions>-->
-      <!--        </configuration>-->
-      <!--        <dependencies>-->
-      <!--          &lt;!&ndash; Enable https://github.com/google/google-java-format &ndash;&gt;-->
-      <!--          <dependency>-->
-      <!--            <artifactId>google-java-format</artifactId>-->
-      <!--            <groupId>com.google.googlejavaformat</groupId>-->
-      <!--            <version>1.7</version>-->
-      <!--          </dependency>-->
-      <!--        </dependencies>-->
-      <!--        <executions>-->
-      <!--          &lt;!&ndash; On commit, format the modified files &ndash;&gt;-->
-      <!--          <execution>-->
-      <!--            <goals>-->
-      <!--              <goal>install-hooks</goal>-->
-      <!--            </goals>-->
-      <!--            <id>install-formatter-hook</id>-->
-      <!--          </execution>-->
-      <!--          &lt;!&ndash; On Maven verify phase, fail if any file-->
-      <!--          (including unmodified) is badly formatted &ndash;&gt;-->
-      <!--          <execution>-->
-      <!--            <goals>-->
-      <!--              <goal>validate-code-format</goal>-->
-      <!--            </goals>-->
-      <!--            <id>validate-code-format</id>-->
-      <!--          </execution>-->
-      <!--        </executions>-->
-      <!--        <groupId>com.cosium.code</groupId>-->
-      <!--        <version>${git-code-format-maven-plugin.version}</version>-->
-      <!--      </plugin>-->
 
       <plugin>
         <groupId>com.cosium.code</groupId>
@@ -403,7 +387,8 @@
             <!-- Do not fix the import order. Unused imports will still be removed. -->
             <googleJavaFormat.skipSortingImports>false</googleJavaFormat.skipSortingImports>
             <!-- Remove unused imports. Imports will still be sorted. -->
-            <googleJavaFormat.skipRemovingUnusedImports>false</googleJavaFormat.skipRemovingUnusedImports>
+            <googleJavaFormat.skipRemovingUnusedImports>false
+            </googleJavaFormat.skipRemovingUnusedImports>
           </formatterOptions>
         </configuration>
       </plugin>
@@ -411,7 +396,7 @@
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
-        <version>0.8.12</version>
+        <version>${jacoco.plugin.version}</version>
         <executions>
           <execution>
             <goals>
@@ -432,7 +417,7 @@
 
       <plugin>
         <artifactId>maven-dependency-plugin</artifactId>
-        <version>3.1.2</version>
+        <version>${maven.dependency.plugin.version}</version>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -451,7 +436,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>3.2.5</version>
+        <version>${maven.surefire.plugin.version}</version>
         <configuration>
           <includes>
             <include>**/*Test.java</include>
@@ -461,7 +446,7 @@
           <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
-            <version>5.8.2</version>
+            <version>${junit.jupiter.version}</version>
           </dependency>
         </dependencies>
       </plugin>
@@ -469,11 +454,12 @@
       <plugin>
         <groupId>org.sonatype.central</groupId>
         <artifactId>central-publishing-maven-plugin</artifactId>
-        <version>0.8.0</version>
+        <version>${central.publishing.plugin.version}</version>
         <extensions>true</extensions>
         <configuration>
           <publishingServerId>central</publishingServerId>
-          <autoPublish>false</autoPublish> <!-- TODO: Change to true for auto publishing to maven central -->
+          <autoPublish>false
+          </autoPublish> <!-- TODO: Change to true for auto publishing to maven central -->
         </configuration>
       </plugin>
 

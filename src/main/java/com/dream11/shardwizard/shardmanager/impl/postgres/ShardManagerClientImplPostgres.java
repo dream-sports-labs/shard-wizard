@@ -39,9 +39,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -55,11 +52,10 @@ public class ShardManagerClientImplPostgres implements ShardManagerClient {
   private final PgConnectOptions readerConnectOptions;
   private final PoolOptions poolOptions;
   static ObjectMapper objectMapper = new ObjectMapper();
-  private final ScheduledExecutorService executorService;
+  private long timerId;
 
   public ShardManagerClientImplPostgres(Vertx vertx, SqlConfig sqlConfig) {
     this.vertx = vertx;
-    this.executorService = Executors.newSingleThreadScheduledExecutor();
 
     this.writerConnectOptions =
         new PgConnectOptions()
@@ -87,11 +83,20 @@ public class ShardManagerClientImplPostgres implements ShardManagerClient {
             () -> {
               try {
                 createMasterSlaveConnection();
-                executorService.scheduleAtFixedRate(
-                    this::checkIfMasterInReadOnlyMode,
-                    CHECK_READONLY_MODE_INTERVAL_SECONDS,
-                    CHECK_READONLY_MODE_INTERVAL_SECONDS,
-                    TimeUnit.SECONDS);
+                long interval =
+                    CHECK_READONLY_MODE_INTERVAL_SECONDS * 1000L; // convert to milliseconds
+                timerId =
+                    vertx.setPeriodic(
+                        interval,
+                        id -> {
+                          try {
+                            checkIfMasterInReadOnlyMode();
+                          } catch (Exception e) {
+                            log.error("Error in periodic readonly check", e);
+                          }
+                        });
+                // Run first check immediately
+                vertx.runOnContext(v -> checkIfMasterInReadOnlyMode());
               } catch (Exception e) {
                 String text =
                     String.format(
@@ -122,6 +127,10 @@ public class ShardManagerClientImplPostgres implements ShardManagerClient {
         CompletableFuture.runAsync(
             () -> {
               try {
+                if (timerId != 0) {
+                  vertx.cancelTimer(timerId);
+                  timerId = 0;
+                }
                 Optional.ofNullable(this.writerPgClient).ifPresent(PgPool::close);
                 Optional.ofNullable(this.readerPgClient).ifPresent(PgPool::close);
                 log.info("Closed writer and reader Postgres ShardManager connections");
@@ -269,7 +278,7 @@ public class ShardManagerClientImplPostgres implements ShardManagerClient {
         .flatMap(
             shardDetails -> {
               if (shardDetails.isEmpty()) {
-                throw new EntityNotMappedToShardException(entityId);
+                return Single.error(new EntityNotMappedToShardException(entityId));
               } else {
                 shardDetails.sort(Comparator.comparingLong(ShardDetails::getShardId));
                 EntityShardDetailsMapping entityShardDetailsMapping =

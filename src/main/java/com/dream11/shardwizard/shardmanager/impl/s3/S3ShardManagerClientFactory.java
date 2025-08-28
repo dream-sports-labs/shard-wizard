@@ -1,9 +1,10 @@
-package com.dream11.shardwizard.shardmanager;
+package com.dream11.shardwizard.shardmanager.impl.s3;
 
 import com.dream11.shardwizard.config.S3Config;
 import com.dream11.shardwizard.config.ShardManagerConfig;
 import com.dream11.shardwizard.constant.DatabaseType;
-import com.dream11.shardwizard.shardmanager.impl.s3.ShardManagerClientImplS3;
+import com.dream11.shardwizard.shardmanager.ShardManagerClient;
+import com.dream11.shardwizard.shardmanager.ShardManagerClientFactory;
 import com.dream11.shardwizard.shardmanager.impl.s3.credentials.CustomCredentialS3ClientStrategy;
 import com.dream11.shardwizard.shardmanager.impl.s3.credentials.IamRoleS3ClientStrategy;
 import com.dream11.shardwizard.shardmanager.impl.s3.credentials.S3ClientStrategy;

@@ -1,4 +1,4 @@
-package com.dream11.shardwizard.client.impl.postgres.hikari;
+package com.dream11.shardwizard.client.postgres.hikari;
 
 import static com.dream11.shardwizard.constant.Constants.CHECK_READONLY_MODE_INTERVAL_SECONDS;
 import static com.dream11.shardwizard.constant.Constants.Metric.*;
@@ -24,8 +24,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import javax.sql.rowset.CachedRowSet;
 import javax.sql.rowset.RowSetFactory;
@@ -42,7 +40,7 @@ public class PostgresHikariClientImpl extends AbstractCircuitBreakerClient
 
   private HikariDataSource masterDataSource;
   private HikariDataSource slaveDataSource;
-  private ScheduledExecutorService executorService;
+  private long timerId;
   private final DatabaseEventRecorder eventRecorder = DatabaseEventRecorder.getInstance();
 
   public PostgresHikariClientImpl(
@@ -60,7 +58,6 @@ public class PostgresHikariClientImpl extends AbstractCircuitBreakerClient
                 new HikariDataSource(postgresHikariConfig.getClientConfig(true));
             this.slaveDataSource =
                 new HikariDataSource(postgresHikariConfig.getClientConfig(false));
-            executorService = Executors.newSingleThreadScheduledExecutor();
             promise.complete();
           } catch (Exception e) {
             eventRecorder.recordError(DB_CONNECT, e);
@@ -69,11 +66,19 @@ public class PostgresHikariClientImpl extends AbstractCircuitBreakerClient
         },
         asyncResult -> {
           if (asyncResult.succeeded()) {
-            executorService.scheduleAtFixedRate(
-                this::checkIfMasterInReadOnlyMode,
-                CHECK_READONLY_MODE_INTERVAL_SECONDS,
-                CHECK_READONLY_MODE_INTERVAL_SECONDS,
-                TimeUnit.SECONDS);
+            long interval = CHECK_READONLY_MODE_INTERVAL_SECONDS * 1000L; // convert to milliseconds
+            timerId =
+                vertx.setPeriodic(
+                    interval,
+                    id -> {
+                      try {
+                        checkIfMasterInReadOnlyMode();
+                      } catch (Exception e) {
+                        log.error("Error in periodic readonly check", e);
+                      }
+                    });
+            // Run first check immediately
+            vertx.runOnContext(v -> checkIfMasterInReadOnlyMode());
             log.info("Successfully created master and slave");
             eventRecorder.recordSuccess(DB_CONNECT);
             handler.handle(Future.succeededFuture());
@@ -101,12 +106,15 @@ public class PostgresHikariClientImpl extends AbstractCircuitBreakerClient
   private String getReadOnlyInformation() {
     try (Connection connection = getConnection(RdsCluster.WRITER);
         PreparedStatement preparedStatement =
-            connection.prepareStatement(SHOW_TRANSACTION_READ_ONLY)) {
-      RowSetFactory factory = RowSetProvider.newFactory();
-      CachedRowSet cachedRowSet = factory.createCachedRowSet();
-      cachedRowSet.populate(preparedStatement.executeQuery());
-      cachedRowSet.next();
-      return cachedRowSet.getString("transaction_read_only");
+            connection.prepareStatement(SHOW_TRANSACTION_READ_ONLY);
+        ResultSet resultSet = preparedStatement.executeQuery();
+        CachedRowSet cachedRowSet = RowSetProvider.newFactory().createCachedRowSet()) {
+      cachedRowSet.populate(resultSet);
+      String readOnlyValue = null;
+      if (cachedRowSet.next()) {
+        readOnlyValue = cachedRowSet.getString("transaction_read_only");
+      }
+      return readOnlyValue;
     } catch (Exception e) {
       log.error("Error in getting readonly information from master", e);
       return null;
@@ -283,6 +291,10 @@ public class PostgresHikariClientImpl extends AbstractCircuitBreakerClient
   }
 
   private void close() {
+    if (timerId != 0) {
+      vertx.cancelTimer(timerId);
+      timerId = 0;
+    }
     if (Objects.nonNull(masterDataSource)) {
       masterDataSource.close();
     }

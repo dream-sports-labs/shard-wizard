@@ -1,4 +1,4 @@
-package com.dream11.shardwizard.client.impl.dynamo;
+package com.dream11.shardwizard.client.dynamo;
 
 import com.dream11.shardwizard.circuitbreaker.client.AbstractCircuitBreakerClient;
 import com.dream11.shardwizard.model.ShardDetails;

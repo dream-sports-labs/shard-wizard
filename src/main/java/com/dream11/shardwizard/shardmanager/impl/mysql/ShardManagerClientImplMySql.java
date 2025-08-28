@@ -1,4 +1,4 @@
-package com.dream11.shardwizard.shardmanager.impl;
+package com.dream11.shardwizard.shardmanager.impl.mysql;
 
 import static com.dream11.shardwizard.constant.Constants.Event.*;
 import static com.dream11.shardwizard.constant.Constants.Metric.*;
