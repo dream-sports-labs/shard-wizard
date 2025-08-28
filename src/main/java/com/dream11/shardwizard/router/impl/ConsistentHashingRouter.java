@@ -60,8 +60,6 @@ public class ConsistentHashingRouter implements ShardRouter {
   }
 
   private long generateHash(String key) {
-    return Hashing.murmur3_128()
-        .hashString(key, StandardCharsets.UTF_8)
-        .asLong();
+    return Hashing.murmur3_128().hashString(key, StandardCharsets.UTF_8).asLong();
   }
 }

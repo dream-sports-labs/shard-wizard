@@ -16,7 +16,6 @@ import com.dream11.shardwizard.utils.CompletableFutureUtils;
 import com.dream11.shardwizard.utils.ConfigUtils;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.typesafe.config.Config;
 import com.typesafe.config.ConfigBeanFactory;
 import com.typesafe.config.ConfigFactory;
 import io.reactivex.Completable;
@@ -32,8 +31,6 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.NonNull;
@@ -49,7 +46,7 @@ public abstract class AbstractDaoFactory<T> implements DaoFactory<T> {
       entityIdToShardMappingCache;
   private final ConcurrentHashMap<String, ShardRouter> entityToShardRouterCache;
   private final ShardManagerClient shardManagerClient;
-  private final ScheduledExecutorService executorService;
+  private long timerId;
   protected ShardManagerConfig shardManagerConfig;
 
   protected AbstractDaoFactory(Vertx vertx) {
@@ -60,7 +57,6 @@ public abstract class AbstractDaoFactory<T> implements DaoFactory<T> {
     this.shardIdToDaoCache = new ConcurrentHashMap<>();
     this.entityIdToShardMappingCache = new ConcurrentHashMap<>();
     this.shardManagerClient = ShardManagerClient.create(vertx);
-    this.executorService = Executors.newSingleThreadScheduledExecutor();
     this.entityToShardRouterCache = new ConcurrentHashMap<>();
   }
 
@@ -87,22 +83,21 @@ public abstract class AbstractDaoFactory<T> implements DaoFactory<T> {
       ShardConnectionParameters pojo1,
       ShardConnectionParameters pojo2,
       Class<ShardConnectionParameters> kclass) {
-    ObjectMapper objectMapper = new ObjectMapper();
-    objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     try {
-      String json1 = objectMapper.writeValueAsString(pojo1);
-      String json2 = objectMapper.writeValueAsString(pojo2);
-      Config config1 = ConfigFactory.parseString(json1);
-      Config config2 = ConfigFactory.parseString(json2);
-      Config finalConfig = config1.withFallback(config2).resolve();
-      return ConfigBeanFactory.create(finalConfig, kclass);
+      ObjectMapper objectMapper =
+          new ObjectMapper().setSerializationInclusion(JsonInclude.Include.NON_NULL);
+      return ConfigBeanFactory.create(
+          ConfigFactory.parseString(objectMapper.writeValueAsString(pojo1))
+              .withFallback(ConfigFactory.parseString(objectMapper.writeValueAsString(pojo2)))
+              .resolve(),
+          kclass);
     } catch (IOException e) {
       throw new RuntimeException("Error merging POJOs to Config", e);
     }
   }
 
   private ShardDetails updateShardConnectionParams(ShardDetails shardDetails) {
-    String sourceType = shardManagerConfig.getSourceType();
+    String sourceType = shardManagerConfig.getSourceType().name();
     String databaseType = shardDetails.getShardConfig().getDatabaseType().name();
     ShardConnectionParameters defaultConnectionParams =
         shardManagerConfig
@@ -281,11 +276,20 @@ public abstract class AbstractDaoFactory<T> implements DaoFactory<T> {
   }
 
   private void schedulePeriodicShardsRefresh(ShardManagerClient shardManagerClient) {
-    executorService.scheduleAtFixedRate(
-        () -> refreshCaches(shardManagerClient),
-        10,
-        shardManagerConfig.getShardsRefreshSeconds(),
-        TimeUnit.SECONDS);
+    long initialDelay = 10L * 1000; // 10 seconds in milliseconds
+    long interval = shardManagerConfig.getShardsRefreshSeconds() * 1000L; // convert to milliseconds
+    timerId =
+        vertx.setPeriodic(
+            interval,
+            id -> {
+              try {
+                refreshCaches(shardManagerClient);
+              } catch (Exception e) {
+                log.error("Error in periodic shard refresh", e);
+              }
+            });
+    // Schedule first run after initial delay
+    vertx.setTimer(initialDelay, id -> refreshCaches(shardManagerClient));
   }
 
   private void refreshCaches(ShardManagerClient shardManagerClient) {
@@ -409,8 +413,8 @@ public abstract class AbstractDaoFactory<T> implements DaoFactory<T> {
   public Completable rxClose() {
     return Completable.fromAction(
             () -> {
-              log.info("Closing shardsRefresh executor service");
-              executorService.shutdownNow();
+              log.info("Cancelling shardsRefresh timer");
+              vertx.cancelTimer(timerId);
             })
         .andThen(
             Completable.defer(

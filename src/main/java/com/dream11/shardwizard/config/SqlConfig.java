@@ -7,7 +7,6 @@ import lombok.NonNull;
 @Data
 @NoArgsConstructor
 public class SqlConfig extends SourceConfig {
-
   @NonNull private String writerHost;
   @NonNull private String readerHost;
   private int port;

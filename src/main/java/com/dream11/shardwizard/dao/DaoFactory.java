@@ -28,7 +28,9 @@ public interface DaoFactory<T> {
    */
   Single<List<ShardDetails>> rxGetEntityShardDetails(String entityId);
 
-  /** @return List of all active DAO instances. */
+  /**
+   * @return List of all active DAO instances.
+   */
   Single<List<T>> rxGetAllActiveShardsDAOs();
 
   /**

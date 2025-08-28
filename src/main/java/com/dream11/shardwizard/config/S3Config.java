@@ -7,7 +7,6 @@ import lombok.NonNull;
 @Data
 @NoArgsConstructor
 public class S3Config extends SourceConfig {
-
   @NonNull private String bucketName;
   @NonNull private String shardMasterFilePath;
   @NonNull private String entityShardMappingFolderPath;

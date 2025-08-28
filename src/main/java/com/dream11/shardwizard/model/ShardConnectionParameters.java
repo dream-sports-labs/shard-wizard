@@ -1,6 +1,8 @@
 package com.dream11.shardwizard.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.typesafe.config.Optional;
+import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -32,4 +34,22 @@ public class ShardConnectionParameters {
   private String password;
 
   private String database;
+
+  @Optional private String endpoint;
+  @Optional private String region;
+
+  @Optional private CircuitBreakerConfigDTO circuitBreaker;
+  @Optional private Map<String, Object> tableConnectionMap;
+  @Optional private String accessKey;
+  @Optional private String secretKey;
+
+  @Data
+  @Builder
+  @NoArgsConstructor
+  @AllArgsConstructor
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  public static class TableConnectionInfo {
+    private String endpoint;
+    private String region;
+  }
 }

@@ -1,0 +1,38 @@
+package com.dream11.shardwizard.client.mysql;
+
+import com.dream11.shardwizard.constant.RdsCluster;
+import io.reactivex.Completable;
+import io.reactivex.Single;
+import io.vertx.reactivex.sqlclient.Row;
+import io.vertx.reactivex.sqlclient.RowSet;
+import io.vertx.reactivex.sqlclient.SqlConnection;
+import io.vertx.reactivex.sqlclient.Transaction;
+import io.vertx.reactivex.sqlclient.Tuple;
+import java.util.List;
+import java.util.function.Function;
+
+/**
+ * This interface defines methods for interacting with a MySQL database using the reactive Vert.x
+ * client. It is designed to ensure that each client callbacks remains tied to the same event-loop
+ * context, preventing the context-switching issues that arise when a single global client is used
+ * across the application.
+ */
+public interface MysqlVertxClient {
+
+  Completable rxConnect();
+
+  Single<RowSet<Row>> rxExecutePreparedQuery(RdsCluster cluster, String query, Tuple tuple);
+
+  Single<RowSet<Row>> rxExecuteBatchPreparedQuery(
+      RdsCluster cluster, String query, List<Tuple> tuplesBatch);
+
+  Single<RowSet<Row>> rxExecuteQuery(RdsCluster cluster, String query);
+
+  Single<Transaction> rxBeginTxn();
+
+  <T> Single<T> rxGetConnectionForTxn(Function<SqlConnection, Single<T>> function);
+
+  Completable rxClose();
+
+  Single<Boolean> rxCommitTransaction(Transaction transaction);
+}

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-  <appender class="ch.qos.logback.core.ConsoleAppender" name="STDOUT">
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
     <encoder>
       <pattern>
         %date %highlight(%+5level) %-26thread %X{dd.trace_id:-0} %X{dd.span_id:-0} %logger{36}

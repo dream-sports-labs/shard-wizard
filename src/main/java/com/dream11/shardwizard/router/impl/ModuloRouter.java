@@ -3,7 +3,7 @@ package com.dream11.shardwizard.router.impl;
 import com.dream11.shardwizard.router.ShardRouter;
 import java.util.List;
 
-//This assumes that routeKey is a number
+// This assumes that routeKey is a number
 public class ModuloRouter implements ShardRouter {
 
   List<Long> shardIds;

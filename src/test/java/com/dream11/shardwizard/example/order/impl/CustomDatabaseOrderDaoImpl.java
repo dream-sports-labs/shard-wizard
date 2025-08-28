@@ -8,8 +8,13 @@ import com.dream11.shardwizard.model.ShardDetails;
 import io.reactivex.Completable;
 import io.reactivex.Single;
 import io.vertx.reactivex.core.Vertx;
+import io.vertx.reactivex.sqlclient.SqlConnection;
+import io.vertx.reactivex.sqlclient.Transaction;
+import java.util.List;
+import java.util.function.Function;
 
-public class CustomDatabaseOrderDaoImpl extends BaseDaoAbstract implements OrderDao {
+public class CustomDatabaseOrderDaoImpl extends BaseDaoAbstract
+    implements OrderDao { // todo - not used anywhere
 
   private String customDbClient;
 
@@ -45,8 +50,52 @@ public class CustomDatabaseOrderDaoImpl extends BaseDaoAbstract implements Order
   }
 
   @Override
+  public Single<List<CreateOrderResponse>> createBulk(List<OrderDto> orderDtos) {
+    return null;
+  }
+
+  @Override
   public Single<OrderDto> get(String orderId) {
     System.out.println("Fetching Mysql orderDto");
     return Single.just(new OrderDto());
+  }
+
+  @Override
+  public Single<List<CreateOrderResponse>> createBatch(List<OrderDto> orders) {
+    System.out.println("MysqlOrderDto created in batch");
+    return Single.just(List.of(new CreateOrderResponse()));
+  }
+
+  @Override
+  public <T> Single<T> createTransaction(Function<SqlConnection, Single<T>> function) {
+    // Todo: need to implement this in postgres
+    return null;
+  }
+
+  @Override
+  public Single<Transaction> rxBeginTxn() {
+    // Todo: need to implement this in postgres
+    return null;
+  }
+
+  @Override
+  public Single<Boolean> rxCommitTransaction(Transaction transaction) {
+    // Todo: need to implement this in postgres
+    return null;
+  }
+
+  @Override
+  public Single<CreateOrderResponse> rxExecuteQuery(OrderDto orderDto) {
+    return null;
+  }
+
+  @Override
+  public Single<Boolean> update(OrderDto orderDto) {
+    return null;
+  }
+
+  @Override
+  public Single<Boolean> delete(OrderDto orderDto) {
+    return null;
   }
 }

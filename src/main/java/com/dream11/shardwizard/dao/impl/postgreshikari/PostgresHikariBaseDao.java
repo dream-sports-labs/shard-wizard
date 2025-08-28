@@ -1,9 +1,9 @@
 package com.dream11.shardwizard.dao.impl.postgreshikari;
 
-import com.dream11.shardwizard.client.impl.common.RdsCluster;
-import com.dream11.shardwizard.client.impl.postgres.hikari.PostgresHikariClient;
-import com.dream11.shardwizard.client.impl.postgres.hikari.PostgresHikariClientImpl;
-import com.dream11.shardwizard.client.impl.postgres.hikari.PostgresHikariConfig;
+import com.dream11.shardwizard.client.postgres.hikari.PostgresHikariClient;
+import com.dream11.shardwizard.client.postgres.hikari.PostgresHikariClientImpl;
+import com.dream11.shardwizard.config.PostgresHikariConfig;
+import com.dream11.shardwizard.constant.RdsCluster;
 import com.dream11.shardwizard.dao.BaseDaoAbstract;
 import com.dream11.shardwizard.model.ShardConnectionParameters;
 import com.dream11.shardwizard.model.ShardDetails;
@@ -38,7 +38,7 @@ public abstract class PostgresHikariBaseDao extends BaseDaoAbstract {
 
     Optional.ofNullable(connectionParams.getMaxConnections())
         .ifPresent(postgresConfig::setMaxPoolSize);
-    this.postgresHikariClient = new PostgresHikariClientImpl(vertx, postgresConfig);
+    this.postgresHikariClient = new PostgresHikariClientImpl(vertx, postgresConfig, shardDetails);
   }
 
   @Override

@@ -6,7 +6,5 @@ public class DatabaseTypeNotFoundException extends RuntimeException {
     super("Database type " + databaseType + " not found");
   }
 
-  public DatabaseTypeNotFoundException() {
-
-  }
+  public DatabaseTypeNotFoundException() {}
 }

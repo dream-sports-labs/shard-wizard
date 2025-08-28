@@ -1,15 +1,21 @@
 package com.dream11.shardwizard.shardmanager.impl.postgres;
 
 import static com.dream11.shardwizard.constant.Constants.CHECK_READONLY_MODE_INTERVAL_SECONDS;
-import static com.dream11.shardwizard.shardmanager.impl.postgres.PostgresQueries.SHOW_TRANSACTION_READ_ONLY;
+import static com.dream11.shardwizard.constant.Constants.Event.*;
+import static com.dream11.shardwizard.constant.Constants.Metric.*;
+import static com.dream11.shardwizard.constant.PostgresQueries.SHOW_TRANSACTION_READ_ONLY;
 
 import com.dream11.shardwizard.config.SqlConfig;
+import com.dream11.shardwizard.constant.PostgresQueries;
 import com.dream11.shardwizard.exception.DefaultShardNotFoundException;
 import com.dream11.shardwizard.exception.EntityNotMappedToShardException;
+import com.dream11.shardwizard.metric.ObservabilityServiceFactory;
 import com.dream11.shardwizard.model.EntityShardDetailsMapping;
+import com.dream11.shardwizard.model.ObservabilityEvent;
 import com.dream11.shardwizard.model.ShardConfig;
 import com.dream11.shardwizard.model.ShardDetails;
 import com.dream11.shardwizard.model.ShardManagerResponse;
+import com.dream11.shardwizard.model.ShardUpdateResponse;
 import com.dream11.shardwizard.shardmanager.ShardManagerClient;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -33,22 +39,20 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class ShardManagerClientImplPostgres implements ShardManagerClient {
 
-  static ObjectMapper objectMapper = new ObjectMapper();
   private final Vertx vertx;
+  private PgPool writerPgClient;
+  private PgPool readerPgClient;
   private final PgConnectOptions writerConnectOptions;
   private final PgConnectOptions readerConnectOptions;
   private final PoolOptions poolOptions;
-  private PgPool writerPgClient;
-  private PgPool readerPgClient;
-
-  private long timerId; // Timer ID for periodic task
+  static ObjectMapper objectMapper = new ObjectMapper();
+  private long timerId;
 
   public ShardManagerClientImplPostgres(Vertx vertx, SqlConfig sqlConfig) {
     this.vertx = vertx;
@@ -72,31 +76,6 @@ public class ShardManagerClientImplPostgres implements ShardManagerClient {
     this.poolOptions = new PoolOptions().setMaxSize(1);
   }
 
-  private static List<ShardDetails> getShardDetailsFromRowSet(RowSet<Row> rows)
-      throws JsonProcessingException {
-    List<ShardDetails> shardDetails = new ArrayList<>();
-    for (Row row : rows) {
-      long shardId = row.getLong("shardid");
-      String shardMetaJson = row.getString("details");
-      ShardConfig shardConfig = objectMapper.readValue(shardMetaJson, ShardConfig.class);
-      shardDetails.add(new ShardDetails(shardId, shardConfig));
-    }
-    return shardDetails;
-  }
-
-  private static Map<String, List<ShardDetails>> getEntityIdToActiveShardsMap(RowSet<Row> rows) {
-    Map<String, List<ShardDetails>> entityIdToShardDetailsMap = new HashMap<>();
-    for (Row row : rows) {
-      String entityId = row.getString("entityid");
-      long shardId = row.getLong("shardid");
-      JsonObject shardMetaJson = new JsonObject(row.getString("details"));
-      ShardConfig shardConfig = shardMetaJson.mapTo(ShardConfig.class);
-      ShardDetails shardDetails = new ShardDetails(shardId, shardConfig);
-      entityIdToShardDetailsMap.computeIfAbsent(entityId, k -> new ArrayList<>()).add(shardDetails);
-    }
-    return entityIdToShardDetailsMap;
-  }
-
   @Override
   public Completable rxBootstrap() {
     return Completable.fromFuture(
@@ -104,16 +83,34 @@ public class ShardManagerClientImplPostgres implements ShardManagerClient {
             () -> {
               try {
                 createMasterSlaveConnection();
-                // Use Vert.x timer for periodic task
+                long interval =
+                    CHECK_READONLY_MODE_INTERVAL_SECONDS * 1000L; // convert to milliseconds
                 timerId =
                     vertx.setPeriodic(
-                        TimeUnit.SECONDS.toMillis(CHECK_READONLY_MODE_INTERVAL_SECONDS),
-                        id -> checkIfMasterInReadOnlyMode());
+                        interval,
+                        id -> {
+                          try {
+                            checkIfMasterInReadOnlyMode();
+                          } catch (Exception e) {
+                            log.error("Error in periodic readonly check", e);
+                          }
+                        });
+                // Run first check immediately
+                vertx.runOnContext(v -> checkIfMasterInReadOnlyMode());
               } catch (Exception e) {
-                log.error(
-                    "ShardManager:Failed to connect to ShardManager Postgres writer and reader clients",
-                    e);
-                throw e;
+                String text =
+                    String.format(
+                        "ShardManager:Failed to connect to ShardManager Postgres writer and reader clients, with error: %s",
+                        e.getMessage());
+                log.error(text);
+                ObservabilityEvent observabilityEvent =
+                    ObservabilityEvent.builder()
+                        .title(DB_CONNECT)
+                        .description(text)
+                        .severity(ObservabilityEvent.EventSeverity.ERROR)
+                        .tags(Map.of("event", DB_CONNECT))
+                        .build();
+                ObservabilityServiceFactory.getInstance().recordEvent(observabilityEvent);
               }
             }));
   }
@@ -130,18 +127,25 @@ public class ShardManagerClientImplPostgres implements ShardManagerClient {
         CompletableFuture.runAsync(
             () -> {
               try {
-                // Cancel the Vert.x timer
                 if (timerId != 0) {
                   vertx.cancelTimer(timerId);
+                  timerId = 0;
                 }
                 Optional.ofNullable(this.writerPgClient).ifPresent(PgPool::close);
                 Optional.ofNullable(this.readerPgClient).ifPresent(PgPool::close);
                 log.info("Closed writer and reader Postgres ShardManager connections");
               } catch (Exception e) {
-                log.error(
-                    "ShardManager:Failed to close writer and reader Postgres ShardManager connections",
-                    e);
-                throw e;
+                String text =
+                    "ShardManager:Failed to close writer and reader Postgres ShardManager connections";
+                log.error(text, e);
+                ObservabilityEvent observabilityEvent =
+                    ObservabilityEvent.builder()
+                        .title(DB_CLOSE)
+                        .description(String.format(text + ": %s", e.getMessage()))
+                        .severity(ObservabilityEvent.EventSeverity.ERROR)
+                        .tags(Map.of("event", DB_CLOSE))
+                        .build();
+                ObservabilityServiceFactory.getInstance().recordEvent(observabilityEvent);
               }
             }));
   }
@@ -161,8 +165,17 @@ public class ShardManagerClientImplPostgres implements ShardManagerClient {
                                 .toSingleDefault(new ShardDetails(createdShardId, details)))
                     .onErrorResumeNext(
                         err -> {
-                          log.error(
-                              "ShardManager:Failed to insert new shard in shard Manager", err);
+                          String text =
+                              String.format("Failed to insert new shard. %s", err.getMessage());
+                          log.error(text);
+                          ObservabilityEvent observabilityEvent =
+                              ObservabilityEvent.builder()
+                                  .title(SHARD_REGISTRATION_FAILED)
+                                  .description(text)
+                                  .severity(ObservabilityEvent.EventSeverity.ERROR)
+                                  .tags(Map.of("event", SHARD_REGISTRATION_FAILED))
+                                  .build();
+                          ObservabilityServiceFactory.getInstance().recordEvent(observabilityEvent);
                           return tx.rxRollback().andThen(Single.error(err));
                         }));
   }
@@ -237,10 +250,21 @@ public class ShardManagerClientImplPostgres implements ShardManagerClient {
                     .flatMap(x -> tx.rxCommit().toSingleDefault(x))
                     .onErrorResumeNext(
                         err -> {
-                          log.error(
-                              "ShardManager:Failed to getOrCreate mapping for entity {}",
-                              entityId,
-                              err);
+                          String text =
+                              String.format(
+                                  "Failed to insert new shard for entityId: %s and error message: %s",
+                                  entityId, err.getMessage());
+                          log.error(text);
+
+                          ObservabilityEvent observabilityEvent =
+                              ObservabilityEvent.builder()
+                                  .title(SHARD_INSERTION_FAILED)
+                                  .description(text)
+                                  .severity(ObservabilityEvent.EventSeverity.ERROR)
+                                  .tags(
+                                      Map.of("entityId", entityId, "event", SHARD_INSERTION_FAILED))
+                                  .build();
+                          ObservabilityServiceFactory.getInstance().recordEvent(observabilityEvent);
                           return tx.rxRollback().andThen(Single.error(err));
                         }));
   }
@@ -307,6 +331,16 @@ public class ShardManagerClientImplPostgres implements ShardManagerClient {
         .map(
             rows -> {
               if (rows.rowCount() == 0) {
+                String text =
+                    String.format("EntityShardMapping not found for entityId: %s", entityId);
+                ObservabilityEvent observabilityEvent =
+                    ObservabilityEvent.builder()
+                        .title(ENTITY_SHARD_MAPPING_NOT_FOUND)
+                        .description(text)
+                        .severity(ObservabilityEvent.EventSeverity.ERROR)
+                        .tags(Map.of("entityId", entityId, "event", ENTITY_SHARD_MAPPING_NOT_FOUND))
+                        .build();
+                ObservabilityServiceFactory.getInstance().recordEvent(observabilityEvent);
                 throw new IllegalArgumentException("EntityShardMapping not found.");
               }
               return new ShardManagerResponse(true, "EntityShardMapping deleted");
@@ -329,6 +363,80 @@ public class ShardManagerClientImplPostgres implements ShardManagerClient {
                   .rxExecute(Tuple.of(entityId, new JsonArray(shardIds)));
             })
         .map(any -> new ShardManagerResponse(true, "Mapping created"));
+  }
+
+  @Override
+  public Single<ShardUpdateResponse> rxUpdateExistingShardDetails(
+      long shardId, ShardConfig details) {
+    return writerPgClient
+        .rxBegin()
+        .flatMap(
+            tx -> {
+              // First get current details
+              return tx.preparedQuery(PostgresQueries.GET_SHARD_DETAILS_QUERY)
+                  .rxExecute(Tuple.of(shardId))
+                  .flatMap(
+                      currentResult -> {
+                        List<ShardDetails> currentShards = getShardDetailsFromRowSet(currentResult);
+                        if (currentShards.isEmpty()) {
+                          return Single.error(
+                              new IllegalArgumentException("Shard not found with id: " + shardId));
+                        }
+                        ShardDetails currentShard = currentShards.get(0);
+
+                        // Then update the shard details
+                        return tx.preparedQuery(PostgresQueries.SET_SHARD_DETAILS_QUERY)
+                            .rxExecute(Tuple.of(JsonObject.mapFrom(details).toString(), shardId))
+                            .map(
+                                rows -> {
+                                  if (rows.rowCount() == 0) {
+                                    throw new IllegalArgumentException(
+                                        "Failed to update shard with id: " + shardId);
+                                  }
+                                  List<ShardDetails> updatedShards =
+                                      getShardDetailsFromRowSet(rows);
+                                  if (updatedShards.isEmpty()) {
+                                    throw new IllegalArgumentException(
+                                        "Failed to parse updated shard details");
+                                  }
+                                  return ShardUpdateResponse.builder()
+                                      .currentShardDetails(currentShard)
+                                      .updatedShardDetails(updatedShards.get(0))
+                                      .build();
+                                });
+                      })
+                  .flatMap(updateResponse -> tx.rxCommit().toSingleDefault(updateResponse))
+                  .onErrorResumeNext(
+                      err -> {
+                        log.error("ShardManager:Failed to update shard details", err);
+                        return tx.rxRollback().andThen(Single.error(err));
+                      });
+            });
+  }
+
+  private static List<ShardDetails> getShardDetailsFromRowSet(RowSet<Row> rows)
+      throws JsonProcessingException {
+    List<ShardDetails> shardDetails = new ArrayList<>();
+    for (Row row : rows) {
+      long shardId = row.getLong("shardid");
+      String shardMetaJson = row.getString("details");
+      ShardConfig shardConfig = objectMapper.readValue(shardMetaJson, ShardConfig.class);
+      shardDetails.add(new ShardDetails(shardId, shardConfig));
+    }
+    return shardDetails;
+  }
+
+  private static Map<String, List<ShardDetails>> getEntityIdToActiveShardsMap(RowSet<Row> rows) {
+    Map<String, List<ShardDetails>> entityIdToShardDetailsMap = new HashMap<>();
+    for (Row row : rows) {
+      String entityId = row.getString("entityid");
+      long shardId = row.getLong("shardid");
+      JsonObject shardMetaJson = new JsonObject(row.getString("details"));
+      ShardConfig shardConfig = shardMetaJson.mapTo(ShardConfig.class);
+      ShardDetails shardDetails = new ShardDetails(shardId, shardConfig);
+      entityIdToShardDetailsMap.computeIfAbsent(entityId, k -> new ArrayList<>()).add(shardDetails);
+    }
+    return entityIdToShardDetailsMap;
   }
 
   private void checkIfMasterInReadOnlyMode() {

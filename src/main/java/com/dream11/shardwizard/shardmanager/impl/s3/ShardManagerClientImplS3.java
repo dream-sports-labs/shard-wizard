@@ -8,6 +8,7 @@ import com.dream11.shardwizard.model.ShardConfig;
 import com.dream11.shardwizard.model.ShardDetails;
 import com.dream11.shardwizard.model.ShardDetailsS3;
 import com.dream11.shardwizard.model.ShardManagerResponse;
+import com.dream11.shardwizard.model.ShardUpdateResponse;
 import com.dream11.shardwizard.shardmanager.ShardManagerClient;
 import com.dream11.shardwizard.shardmanager.impl.s3.credentials.S3ClientStrategy;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -15,12 +16,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.reactivex.Completable;
 import io.reactivex.Single;
 import io.vertx.reactivex.core.Vertx;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
@@ -29,22 +25,17 @@ import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
-import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
-import software.amazon.awssdk.services.s3.model.GetObjectRequest;
-import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
-import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.*;
 
 @Slf4j
 public class ShardManagerClientImplS3 implements ShardManagerClient {
-
+  private S3AsyncClient s3Client;
   private final String bucketName;
   private final String shardMasterFile;
   private final String entityShardMappingFolder;
   private final ObjectMapper objectMapper = new ObjectMapper();
   private final S3Config s3Config;
   private final S3ClientStrategy s3ClientStrategy;
-  private S3AsyncClient s3Client;
 
   public ShardManagerClientImplS3(
       Vertx vertx, S3Config s3Config, S3ClientStrategy s3ClientStrategy) {
@@ -185,6 +176,60 @@ public class ShardManagerClientImplS3 implements ShardManagerClient {
                 }));
   }
 
+  @Override
+  public Single<ShardUpdateResponse> rxUpdateExistingShardDetails(
+      long shardId, ShardConfig details) {
+    log.info("Updating shard details for shardId: {} with details: {}", shardId, details);
+    return Single.fromFuture(
+            readJsonListFromS3(shardMasterFile, ShardDetailsS3[].class)
+                .thenCompose(
+                    allShards -> {
+                      Optional<ShardDetailsS3> shardToUpdate =
+                          allShards.stream().filter(s -> s.getShardId() == shardId).findFirst();
+
+                      if (shardToUpdate.isEmpty()) {
+                        throw new IllegalArgumentException("Shard not found with id: " + shardId);
+                      }
+
+                      ShardDetailsS3 currentShard = shardToUpdate.get();
+                      ShardDetailsS3 updatedShard =
+                          ShardDetailsS3.builder()
+                              .shardId(currentShard.getShardId())
+                              .isActive(currentShard.isActive())
+                              .isDefault(currentShard.isDefault())
+                              .details(details)
+                              .build();
+
+                      // Replace the old shard with the updated one
+                      allShards.replaceAll(s -> s.getShardId() == shardId ? updatedShard : s);
+
+                      return writeJsonToS3(shardMasterFile, allShards)
+                          .thenApply(
+                              v -> {
+                                log.info(
+                                    "Successfully updated shard details for shardId: {}", shardId);
+                                return ShardUpdateResponse.builder()
+                                    .currentShardDetails(
+                                        ShardDetails.builder()
+                                            .shardId(currentShard.getShardId())
+                                            .shardConfig(currentShard.getDetails())
+                                            .build())
+                                    .updatedShardDetails(
+                                        ShardDetails.builder()
+                                            .shardId(updatedShard.getShardId())
+                                            .shardConfig(updatedShard.getDetails())
+                                            .build())
+                                    .build();
+                              });
+                    }))
+        .onErrorResumeNext(
+            error -> {
+              Throwable cause = (error instanceof ExecutionException) ? error.getCause() : error;
+              log.error("Failed to update shard details for shardId: {}", shardId, cause);
+              return Single.error(cause);
+            });
+  }
+
   private CompletableFuture<ShardDetails> registerNewShard(
       List<ShardDetailsS3> existingList, boolean isDefault, ShardConfig details) {
     long nextShardId =
@@ -294,7 +339,7 @@ public class ShardManagerClientImplS3 implements ShardManagerClient {
             });
   }
 
-  public CompletableFuture<Boolean> fileExists(String key) {
+  private CompletableFuture<Boolean> fileExists(String key) {
     HeadObjectRequest request = HeadObjectRequest.builder().bucket(bucketName).key(key).build();
 
     return s3Client
@@ -315,9 +360,7 @@ public class ShardManagerClientImplS3 implements ShardManagerClient {
         .thenApply(
             json -> {
               try {
-                if (json == null || json.trim().isEmpty()) {
-                  return new ArrayList<>();
-                }
+                if (json == null || json.trim().isEmpty()) return new ArrayList<>();
                 T[] array = objectMapper.readValue(json, clazzArray);
                 return new ArrayList<>(Arrays.asList(array));
               } catch (Exception e) {
