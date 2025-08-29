@@ -46,6 +46,6 @@ jobs:
       - name: Maven deploy
         run: mvn --no-transfer-progress --batch-mode -DskipTests deploy -P release
         env:
-          MAVEN_USERNAME: ${{ secrets.D11_NEXUS_USERNAME }}
-          MAVEN_PASSWORD: ${{ secrets.D11_NEXUS_PASSWORD }}
+          MAVEN_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }}
