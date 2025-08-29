@@ -1,4 +1,4 @@
-package com.dream11.shardwizard.dao.impl;
+package com.dream11.shardwizard.dao.impl.dynamo;
 
 import com.dream11.shardwizard.client.dynamo.DynamoVertxClient;
 import com.dream11.shardwizard.client.dynamo.DynamoVertxClientImpl;

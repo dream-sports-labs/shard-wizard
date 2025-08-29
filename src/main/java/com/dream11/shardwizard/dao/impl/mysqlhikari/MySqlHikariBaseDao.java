@@ -1,4 +1,4 @@
-package com.dream11.shardwizard.dao.impl;
+package com.dream11.shardwizard.dao.impl.mysqlhikari;
 
 import com.dream11.shardwizard.dao.BaseDaoAbstract;
 import com.dream11.shardwizard.model.ShardConnectionParameters;

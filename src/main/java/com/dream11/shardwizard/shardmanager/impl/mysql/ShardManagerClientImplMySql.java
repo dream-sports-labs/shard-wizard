@@ -4,7 +4,6 @@ import static com.dream11.shardwizard.constant.Constants.Event.*;
 import static com.dream11.shardwizard.constant.Constants.Metric.*;
 
 import com.dream11.shardwizard.config.SqlConfig;
-import com.dream11.shardwizard.constant.MySqlQueries;
 import com.dream11.shardwizard.exception.DefaultShardNotFoundException;
 import com.dream11.shardwizard.exception.EntityNotMappedToShardException;
 import com.dream11.shardwizard.metric.ObservabilityServiceFactory;

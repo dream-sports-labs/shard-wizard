@@ -1,4 +1,4 @@
-package com.dream11.shardwizard.constant;
+package com.dream11.shardwizard.shardmanager.impl.mysql;
 
 public class MySqlQueries {
 

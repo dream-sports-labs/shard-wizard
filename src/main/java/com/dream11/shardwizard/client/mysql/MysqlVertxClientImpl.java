@@ -2,7 +2,7 @@ package com.dream11.shardwizard.client.mysql;
 
 import static com.dream11.shardwizard.constant.Constants.CHECK_READONLY_MODE_INTERVAL_SECONDS;
 import static com.dream11.shardwizard.constant.Constants.Metric.*;
-import static com.dream11.shardwizard.constant.MySqlQueries.SHOW_VARIABLES_READ_ONLY;
+import static com.dream11.shardwizard.shardmanager.impl.mysql.MySqlQueries.SHOW_VARIABLES_READ_ONLY;
 
 import com.dream11.shardwizard.circuitbreaker.client.AbstractCircuitBreakerClient;
 import com.dream11.shardwizard.constant.RdsCluster;

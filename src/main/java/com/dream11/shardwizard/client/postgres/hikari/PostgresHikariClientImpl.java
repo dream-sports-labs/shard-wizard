@@ -2,7 +2,7 @@ package com.dream11.shardwizard.client.postgres.hikari;
 
 import static com.dream11.shardwizard.constant.Constants.CHECK_READONLY_MODE_INTERVAL_SECONDS;
 import static com.dream11.shardwizard.constant.Constants.Metric.*;
-import static com.dream11.shardwizard.constant.PostgresQueries.SHOW_TRANSACTION_READ_ONLY;
+import static com.dream11.shardwizard.shardmanager.impl.postgres.PostgresQueries.SHOW_TRANSACTION_READ_ONLY;
 
 import com.dream11.shardwizard.circuitbreaker.client.AbstractCircuitBreakerClient;
 import com.dream11.shardwizard.config.PostgresHikariConfig;

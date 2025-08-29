@@ -16,4 +16,3 @@ public class ShardDetails {
   private long shardId;
   private ShardConfig shardConfig;
 }
-
