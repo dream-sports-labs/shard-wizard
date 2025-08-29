@@ -103,7 +103,7 @@ public class StandardIntegrationTestSetup {
             .accessKey("dummy")
             .secretKey("dummy")
             .endpoint(endpoint)
-            .region("us-east-1")
+            .region(Region.US_EAST_1.toString())
             .build();
     dynamoContainerUtils.initializeTestEnvironment(config);
 

@@ -1,4 +1,4 @@
-package com.dream11.shardwizard.example.runs.postgres;
+package com.dream11.shardwizard.example.runs.client.mysql;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 @Slf4j
 public class OrderDaoFactoryConfigTest extends BaseShardTest {
 
-  private static final int CONFIGURED_ROUND = 1012;
+  private static final int CONFIGURED_ROUND = 1023;
   private static final int INVALID_ROUND = 1011;
   private static final int USER_ID_1 = 60009005;
   private static final int USER_ID_2 = 60009006;
@@ -84,8 +84,8 @@ public class OrderDaoFactoryConfigTest extends BaseShardTest {
   private void runShardDetailsTest(
       int roundId, CountDownLatch latch, AtomicReference<Throwable> error) {
     List<ShardDetails> expectedShardDetails = new ArrayList<>();
-    expectedShardDetails.add(createPostgresShard(1, 5433));
-    expectedShardDetails.add(createPostgresShard(2, 5434));
+    expectedShardDetails.add(createMySQLShard(6, 5438));
+    expectedShardDetails.add(createMySQLShard(7, 5439));
 
     orderDaoFactory
         .rxGetOrCreateEntityShardDetails(Integer.toString(roundId))

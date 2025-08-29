@@ -1,4 +1,4 @@
-package com.dream11.shardwizard.example.runs.postgres;
+package com.dream11.shardwizard.example.runs.client.postgres;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 

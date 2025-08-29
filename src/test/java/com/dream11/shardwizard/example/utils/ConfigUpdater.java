@@ -1,4 +1,4 @@
-package com.dream11.shardwizard.example.runs.shardmanager.utils;
+package com.dream11.shardwizard.example.utils;
 
 import java.io.IOException;
 import java.nio.file.Files;

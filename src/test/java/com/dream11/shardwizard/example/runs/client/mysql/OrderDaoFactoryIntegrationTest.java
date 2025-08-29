@@ -1,4 +1,4 @@
-package com.dream11.shardwizard.example.runs.mysql;
+package com.dream11.shardwizard.example.runs.client.mysql;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;

@@ -4,7 +4,7 @@ import static org.junit.Assert.*;
 
 import com.dream11.shardwizard.constant.DatabaseType;
 import com.dream11.shardwizard.example.runs.shardmanager.ShardManagerTestSetup;
-import com.dream11.shardwizard.example.runs.shardmanager.utils.ConfigUpdater;
+import com.dream11.shardwizard.example.utils.ConfigUpdater;
 import com.dream11.shardwizard.example.utils.S3ContainerUtils;
 import com.dream11.shardwizard.model.ShardConfig;
 import com.dream11.shardwizard.model.ShardConnectionParameters;
