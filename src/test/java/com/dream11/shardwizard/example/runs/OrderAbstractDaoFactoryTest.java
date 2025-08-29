@@ -4,8 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dream11.shardwizard.example.BaseShardTest;
-import com.dream11.shardwizard.example.order.OrderAbstractDaoFactory;
 import com.dream11.shardwizard.example.order.OrderDao;
+import com.dream11.shardwizard.example.order.OrderDaoFactory;
 import com.dream11.shardwizard.example.order.impl.PostgresOrderDaoImpl;
 import com.dream11.shardwizard.example.utils.AppContext;
 import com.dream11.shardwizard.router.impl.ConsistentHashingRouter;
@@ -25,7 +25,7 @@ public class OrderAbstractDaoFactoryTest extends BaseShardTest {
   private static final int MYSQL_SHARD_ID = 4;
   private static final int POSTGRES_SHARD_ID = 3;
   private static Vertx vertx;
-  private static OrderAbstractDaoFactory orderDaoFactory;
+  private static OrderDaoFactory orderDaoFactory;
 
   @BeforeAll
   public static void setUp() throws Exception {
@@ -38,7 +38,7 @@ public class OrderAbstractDaoFactoryTest extends BaseShardTest {
         v -> {
           try {
             // Get the already initialized OrderAbstractDaoFactory
-            orderDaoFactory = AppContext.getInstance(OrderAbstractDaoFactory.class);
+            orderDaoFactory = AppContext.getInstance(OrderDaoFactory.class);
             // Bootstrap the factory in a non-blocking way
             orderDaoFactory
                 .rxBootstrap()
