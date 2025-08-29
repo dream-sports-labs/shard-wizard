@@ -1,12 +1,12 @@
 package com.dream11.shardwizard.example;
 
-import static com.dream11.shardwizard.example.helpers.Constants.TABLE_NAME;
+import static com.dream11.shardwizard.example.utils.Constants.TABLE_NAME;
 
 import com.dream11.shardwizard.constant.DatabaseType;
-import com.dream11.shardwizard.example.order.CreateOrderResponse;
+import com.dream11.shardwizard.example.dto.CreateOrderResponseDTO;
+import com.dream11.shardwizard.example.dto.OrderDto;
 import com.dream11.shardwizard.example.order.OrderDao;
 import com.dream11.shardwizard.example.order.OrderDaoFactory;
-import com.dream11.shardwizard.example.order.OrderDto;
 import com.dream11.shardwizard.example.utils.AppContext;
 import com.dream11.shardwizard.model.CircuitBreakerConfigDTO;
 import com.dream11.shardwizard.model.ShardConfig;
@@ -226,7 +226,7 @@ public abstract class BaseShardTest {
     return ShardDetails.builder().shardId(shardId).shardConfig(shardConfig).build();
   }
 
-  protected Single<CreateOrderResponse> saveOrder(OrderDto orderDto, int round, int userId) {
+  protected Single<CreateOrderResponseDTO> saveOrder(OrderDto orderDto, int round, int userId) {
     if (orderDaoFactory == null) {
       return Single.error(
           new IllegalStateException(
@@ -237,7 +237,7 @@ public abstract class BaseShardTest {
         .flatMap(dao -> dao.create(orderDto));
   }
 
-  protected Single<List<CreateOrderResponse>> saveBulkOrder(
+  protected Single<List<CreateOrderResponseDTO>> saveBulkOrder(
       List<OrderDto> orderDtos, int round, int userId) {
     if (orderDaoFactory == null) {
       return Single.error(
@@ -249,7 +249,7 @@ public abstract class BaseShardTest {
         .flatMap(dao -> dao.createBulk(orderDtos));
   }
 
-  protected Single<CreateOrderResponse> saveOrderUsingExecuteQuery(
+  protected Single<CreateOrderResponseDTO> saveOrderUsingExecuteQuery(
       OrderDto orderDto, int round, int userId) {
     if (orderDaoFactory == null) {
       return Single.error(
@@ -261,7 +261,7 @@ public abstract class BaseShardTest {
         .flatMap(dao -> dao.rxExecuteQuery(orderDto));
   }
 
-  protected Single<CreateOrderResponse> beginAndCommitOrderInTrx(
+  protected Single<CreateOrderResponseDTO> beginAndCommitOrderInTrx(
       OrderDto orderDto, int round, int userId) {
     if (orderDaoFactory == null) {
       return Single.error(
@@ -282,7 +282,7 @@ public abstract class BaseShardTest {
                                             .flatMap(response -> Single.just(res)))));
   }
 
-  protected Single<CreateOrderResponse> saveOrderInTransaction(
+  protected Single<CreateOrderResponseDTO> saveOrderInTransaction(
       OrderDto orderDto, int round, int userId) {
     if (orderDaoFactory == null) {
       return Single.error(
@@ -294,7 +294,8 @@ public abstract class BaseShardTest {
         .flatMap(dao -> dao.createTransaction(connection -> dao.create(orderDto)));
   }
 
-  protected Single<List<CreateOrderResponse>> saveOrderInBatch(List<OrderDto> orders, int round) {
+  protected Single<List<CreateOrderResponseDTO>> saveOrderInBatch(
+      List<OrderDto> orders, int round) {
     if (orderDaoFactory == null) {
       return Single.error(new IllegalStateException("OrderDaoFactory is not initialized."));
     }
@@ -320,7 +321,7 @@ public abstract class BaseShardTest {
               }
 
               // Step 3: Call createBatch on each DAO group
-              List<Single<List<CreateOrderResponse>>> batchSaves =
+              List<Single<List<CreateOrderResponseDTO>>> batchSaves =
                   daoToOrdersMap.entrySet().stream()
                       .map(entry -> entry.getKey().createBatch(entry.getValue()))
                       .collect(Collectors.toList());
@@ -329,9 +330,9 @@ public abstract class BaseShardTest {
               return Single.zip(
                   batchSaves,
                   results -> {
-                    List<CreateOrderResponse> allResponses = new ArrayList<>();
+                    List<CreateOrderResponseDTO> allResponses = new ArrayList<>();
                     for (Object result : results) {
-                      allResponses.addAll((List<CreateOrderResponse>) result);
+                      allResponses.addAll((List<CreateOrderResponseDTO>) result);
                     }
                     return allResponses;
                   });

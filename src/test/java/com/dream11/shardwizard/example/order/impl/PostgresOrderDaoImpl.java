@@ -2,9 +2,9 @@ package com.dream11.shardwizard.example.order.impl;
 
 import com.dream11.shardwizard.constant.RdsCluster;
 import com.dream11.shardwizard.dao.impl.postgresvertx.PostgresBaseDao;
-import com.dream11.shardwizard.example.order.CreateOrderResponse;
+import com.dream11.shardwizard.example.dto.CreateOrderResponseDTO;
+import com.dream11.shardwizard.example.dto.OrderDto;
 import com.dream11.shardwizard.example.order.OrderDao;
-import com.dream11.shardwizard.example.order.OrderDto;
 import com.dream11.shardwizard.model.ShardDetails;
 import io.reactivex.Single;
 import io.vertx.reactivex.core.Vertx;
@@ -22,7 +22,7 @@ public class PostgresOrderDaoImpl extends PostgresBaseDao implements OrderDao {
   }
 
   @Override
-  public Single<CreateOrderResponse> create(OrderDto orderDto) {
+  public Single<CreateOrderResponseDTO> create(OrderDto orderDto) {
     return Single.just(1)
         .flatMap(
             any -> {
@@ -39,7 +39,7 @@ public class PostgresOrderDaoImpl extends PostgresBaseDao implements OrderDao {
                           orderDto.getUserId()))
                   .flatMap(
                       result -> {
-                        return Single.just(new CreateOrderResponse(orderId));
+                        return Single.just(new CreateOrderResponseDTO(orderId));
                       })
                   .doOnSuccess(
                       response -> {
@@ -48,13 +48,13 @@ public class PostgresOrderDaoImpl extends PostgresBaseDao implements OrderDao {
                   .onErrorResumeNext(
                       throwable -> {
                         log.error("PostgresOrderDto creation failed:" + throwable);
-                        return Single.just(new CreateOrderResponse(orderId));
+                        return Single.just(new CreateOrderResponseDTO(orderId));
                       });
             });
   }
 
   @Override
-  public Single<List<CreateOrderResponse>> createBulk(List<OrderDto> orderDtos) {
+  public Single<List<CreateOrderResponseDTO>> createBulk(List<OrderDto> orderDtos) {
     return null;
   }
 
@@ -105,9 +105,9 @@ public class PostgresOrderDaoImpl extends PostgresBaseDao implements OrderDao {
   }
 
   @Override
-  public Single<List<CreateOrderResponse>> createBatch(List<OrderDto> orders) {
+  public Single<List<CreateOrderResponseDTO>> createBatch(List<OrderDto> orders) {
     // Todo: need to implement this in postgres
-    return Single.just(List.of(new CreateOrderResponse()));
+    return Single.just(List.of(new CreateOrderResponseDTO()));
   }
 
   @Override
@@ -129,7 +129,7 @@ public class PostgresOrderDaoImpl extends PostgresBaseDao implements OrderDao {
   }
 
   @Override
-  public Single<CreateOrderResponse> rxExecuteQuery(OrderDto orderDto) {
+  public Single<CreateOrderResponseDTO> rxExecuteQuery(OrderDto orderDto) {
     return null;
   }
 }

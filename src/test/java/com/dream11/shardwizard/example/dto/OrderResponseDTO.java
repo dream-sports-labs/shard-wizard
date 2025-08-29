@@ -1,4 +1,4 @@
-package com.dream11.shardwizard.example.order.impl;
+package com.dream11.shardwizard.example.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

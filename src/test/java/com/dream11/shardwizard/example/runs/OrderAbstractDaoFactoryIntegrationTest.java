@@ -4,8 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.dream11.shardwizard.example.BaseShardTest;
-import com.dream11.shardwizard.example.order.CreateOrderResponse;
-import com.dream11.shardwizard.example.order.OrderDto;
+import com.dream11.shardwizard.example.dto.CreateOrderResponseDTO;
+import com.dream11.shardwizard.example.dto.OrderDto;
 import com.dream11.shardwizard.model.ShardDetails;
 import io.reactivex.Single;
 import java.util.ArrayList;
@@ -96,7 +96,7 @@ public class OrderAbstractDaoFactoryIntegrationTest extends BaseShardTest {
             (response1, response2) -> {
               assertNotNull(response1, "Order 1 creation response should not be null");
               assertNotNull(response2, "Order 2 creation response should not be null");
-              return new CreateOrderResponse[] {response1, response2};
+              return new CreateOrderResponseDTO[] {response1, response2};
             })
         .flatMap(responses -> verifyOrders(roundId, userId1, userId2, responses))
         .subscribe(
@@ -108,7 +108,7 @@ public class OrderAbstractDaoFactoryIntegrationTest extends BaseShardTest {
   }
 
   private Single<OrderDto> verifyOrders(
-      int roundId, int userId1, int userId2, CreateOrderResponse[] responses) {
+      int roundId, int userId1, int userId2, CreateOrderResponseDTO[] responses) {
     return orderDaoFactory
         .rxGetOrCreateEntityShardDao(Integer.toString(roundId), userId1)
         .flatMap(dao -> dao.get(responses[0].getOrderId()))
@@ -123,7 +123,7 @@ public class OrderAbstractDaoFactoryIntegrationTest extends BaseShardTest {
   }
 
   private Single<OrderDto> verifySecondOrder(
-      int roundId, int userId, CreateOrderResponse response) {
+      int roundId, int userId, CreateOrderResponseDTO response) {
     return orderDaoFactory
         .rxGetOrCreateEntityShardDao(Integer.toString(roundId), userId)
         .flatMap(dao -> dao.get(response.getOrderId()))

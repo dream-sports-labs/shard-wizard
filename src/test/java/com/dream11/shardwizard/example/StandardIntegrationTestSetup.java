@@ -1,6 +1,6 @@
 package com.dream11.shardwizard.example;
 
-import static com.dream11.shardwizard.example.helpers.Constants.TABLE_NAME;
+import static com.dream11.shardwizard.example.utils.Constants.TABLE_NAME;
 import static com.dream11.shardwizard.example.utils.DynamoContainerUtils.defaultThroughput;
 
 import com.dream11.shardwizard.example.containers.DynamoContainer;

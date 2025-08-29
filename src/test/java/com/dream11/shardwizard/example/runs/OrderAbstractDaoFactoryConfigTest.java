@@ -4,8 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.dream11.shardwizard.example.BaseShardTest;
-import com.dream11.shardwizard.example.order.CreateOrderResponse;
-import com.dream11.shardwizard.example.order.OrderDto;
+import com.dream11.shardwizard.example.dto.CreateOrderResponseDTO;
+import com.dream11.shardwizard.example.dto.OrderDto;
 import com.dream11.shardwizard.model.ShardDetails;
 import io.reactivex.Single;
 import java.util.ArrayList;
@@ -138,7 +138,8 @@ public class OrderAbstractDaoFactoryConfigTest extends BaseShardTest {
             e -> handleTestError("Error in order creation test", e, latch, error));
   }
 
-  private Single<OrderDto> verifyFirstOrder(CreateOrderResponse response, int roundId, int userId) {
+  private Single<OrderDto> verifyFirstOrder(
+      CreateOrderResponseDTO response, int roundId, int userId) {
     assertNotNull(response, "Order 1 creation response should not be null");
     String orderId = response.getOrderId();
     assertNotNull(orderId, "Order 1 ID should not be null");
@@ -169,7 +170,7 @@ public class OrderAbstractDaoFactoryConfigTest extends BaseShardTest {
   }
 
   private Single<OrderDto> verifySecondOrder(
-      CreateOrderResponse response, int roundId, int userId) {
+      CreateOrderResponseDTO response, int roundId, int userId) {
     assertNotNull(response, "Order 2 creation response should not be null");
     String orderId = response.getOrderId();
     assertNotNull(orderId, "Order 2 ID should not be null");
