@@ -6,7 +6,7 @@
 
   <groupId>com.dream11</groupId>
   <artifactId>shard-wizard</artifactId>
-  <version>1.0.4-SNAPSHOT</version>
+  <version>1.0.5-SNAPSHOT</version>
   <packaging>jar</packaging>
   <name>Shard Wizard</name>
   <description>Vert.x library for scalable shard management and routing of entities across multiple
