@@ -1,4 +1,4 @@
-package com.dream11.shardwizard.dao.impl;
+package com.dream11.shardwizard.dao.impl.mysqlvertx;
 
 import com.dream11.shardwizard.client.mysql.MysqlVertxClient;
 import com.dream11.shardwizard.client.mysql.MysqlVertxClientImpl;

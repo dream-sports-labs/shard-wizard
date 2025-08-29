@@ -1,7 +1,7 @@
 package com.dream11.shardwizard.example.order.impl;
 
 import com.dream11.shardwizard.constant.RdsCluster;
-import com.dream11.shardwizard.dao.impl.MySqlVertxBaseDao;
+import com.dream11.shardwizard.dao.impl.mysqlvertx.MySqlVertxBaseDao;
 import com.dream11.shardwizard.example.order.CreateOrderResponse;
 import com.dream11.shardwizard.example.order.OrderDao;
 import com.dream11.shardwizard.example.order.OrderDto;

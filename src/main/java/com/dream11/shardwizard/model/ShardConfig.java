@@ -15,10 +15,7 @@ import lombok.ToString;
 @Builder
 public class ShardConfig {
 
-  @NonNull
-  private DatabaseType databaseType;
+  @NonNull private DatabaseType databaseType;
 
-  @NonNull
-  private ShardConnectionParameters shardConnectionParams;
-
+  @NonNull private ShardConnectionParameters shardConnectionParams;
 }

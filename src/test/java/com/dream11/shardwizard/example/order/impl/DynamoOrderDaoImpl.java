@@ -2,7 +2,7 @@ package com.dream11.shardwizard.example.order.impl;
 
 import static com.dream11.shardwizard.example.helpers.Constants.TABLE_NAME;
 
-import com.dream11.shardwizard.dao.impl.DynamoBaseDao;
+import com.dream11.shardwizard.dao.impl.dynamo.DynamoBaseDao;
 import com.dream11.shardwizard.example.order.CreateOrderResponse;
 import com.dream11.shardwizard.example.order.OrderDao;
 import com.dream11.shardwizard.example.order.OrderDto;
