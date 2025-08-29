@@ -49,10 +49,3 @@ jobs:
           MAVEN_USERNAME: ${{ secrets.D11_NEXUS_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.D11_NEXUS_PASSWORD }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }}
-
-      - name: Upload to codecov
-        uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24 # v5.4.3
-        with:
-          file: ./target/site/jacoco/jacoco.xml
-          fail_ci_if_error: true
-          token: ${{ secrets.CODECOV_TOKEN }}
