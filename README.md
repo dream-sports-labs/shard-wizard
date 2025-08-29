@@ -81,7 +81,7 @@ Add the dependency to your `pom.xml`:
 <dependency>
     <groupId>com.dream11</groupId>
     <artifactId>shard-wizard</artifactId>
-    <version>3.0.19-SNAPSHOT</version>
+    <version>x.y.z</version>
 </dependency>
 ```
 
