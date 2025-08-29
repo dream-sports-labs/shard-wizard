@@ -39,7 +39,7 @@ public class ShardConnectionParameters {
   @Optional private String region;
 
   @Optional private CircuitBreakerConfigDTO circuitBreaker;
-  @Optional private Map<String, Object> tableConnectionMap;
+  @Optional private Map<String, Object> tableConnectionMap; // todo - can be removed
   @Optional private String accessKey;
   @Optional private String secretKey;
 

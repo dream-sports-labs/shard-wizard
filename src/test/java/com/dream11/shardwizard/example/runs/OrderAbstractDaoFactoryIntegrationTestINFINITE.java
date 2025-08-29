@@ -3,8 +3,8 @@ package com.dream11.shardwizard.example.runs;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.dream11.shardwizard.example.BaseShardTest;
-import com.dream11.shardwizard.example.order.CreateOrderResponse;
-import com.dream11.shardwizard.example.order.OrderDto;
+import com.dream11.shardwizard.example.dto.CreateOrderResponseDTO;
+import com.dream11.shardwizard.example.dto.OrderDto;
 import io.reactivex.Single;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -61,7 +61,7 @@ public class OrderAbstractDaoFactoryIntegrationTestINFINITE extends BaseShardTes
         .flatMap(response -> verifyOrder(response, roundId, userId));
   }
 
-  private Single<OrderDto> verifyOrder(CreateOrderResponse response, int roundId, int userId) {
+  private Single<OrderDto> verifyOrder(CreateOrderResponseDTO response, int roundId, int userId) {
     log.info("Starting verify order creation test");
     return orderDaoFactory
         .rxGetOrCreateEntityShardDao(Integer.toString(roundId), userId)

@@ -1,5 +1,8 @@
 package com.dream11.shardwizard.constant;
 
+import lombok.experimental.UtilityClass;
+
+@UtilityClass
 public class Constants {
 
   public static final String SHARD_MANAGER_CONFIG_FOLDER = "shard-manager";

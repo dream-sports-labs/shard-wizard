@@ -1,14 +1,17 @@
-package com.dream11.shardwizard.example.runs.postgres;
+package com.dream11.shardwizard.example.runs.client.dynamo;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.dream11.shardwizard.example.BaseShardTest;
-import com.dream11.shardwizard.example.order.CreateOrderResponse;
-import com.dream11.shardwizard.example.order.OrderDto;
+import com.dream11.shardwizard.example.dto.CreateOrderResponseDTO;
+import com.dream11.shardwizard.example.dto.OrderDto;
 import io.reactivex.Single;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -44,6 +47,20 @@ public class OrderDaoFactoryIntegrationTestINFINITE extends BaseShardTest {
     latch.await();
   }
 
+  @Test
+  void shouldCreateBulkOrdersContinuously()
+      throws Exception { // todo - this will not be called as above one is infinite, can define a
+    // limit. - fix this
+    CountDownLatch latch = new CountDownLatch(1);
+    AtomicInteger roundId = new AtomicInteger(INITIAL_ROUND_ID);
+    AtomicInteger userId = new AtomicInteger(INITIAL_USER_ID);
+
+    log.info("Starting infinite bulk order creation test");
+    vertx.runOnContext(v -> createOrdersBulkBatch(roundId, userId, latch));
+
+    latch.await();
+  }
+
   private void createOrdersBatch(
       AtomicInteger roundId, AtomicInteger userId, CountDownLatch latch) {
     try {
@@ -56,13 +73,56 @@ public class OrderDaoFactoryIntegrationTestINFINITE extends BaseShardTest {
     }
   }
 
+  private void createOrdersBulkBatch(
+      AtomicInteger roundId, AtomicInteger userId, CountDownLatch latch) {
+    try {
+      createAndVerifyBulkOrders(roundId.get(), userId.get())
+          .doOnError(e -> handleOrderCreationError(roundId.get(), userId.get(), e))
+          .doFinally(() -> scheduleNextBulkBatch(roundId, userId, latch))
+          .subscribe();
+    } catch (Exception e) {
+      handleBulkBatchError(roundId, userId, latch, e);
+    }
+  }
+
   private Single<OrderDto> createAndVerifyOrder(int roundId, int userId) {
     return Single.fromCallable(() -> createSampleOrder(userId, roundId))
         .flatMap(orderDto -> saveOrder(orderDto, roundId, userId))
         .flatMap(response -> verifyOrder(response, roundId, userId));
   }
 
-  private Single<OrderDto> verifyOrder(CreateOrderResponse response, int roundId, int userId) {
+  private static final int DEFAULT_BULK_ORDER_COUNT = 10;
+
+  private Single<List<OrderDto>> createAndVerifyBulkOrders(int roundId, int userId) {
+    List<OrderDto> orderDtos = new ArrayList<>();
+    for (int i = 0; i < DEFAULT_BULK_ORDER_COUNT; i++) {
+      orderDtos.add(createSampleOrder(userId, roundId));
+    }
+
+    return saveBulkOrder(orderDtos, roundId, userId)
+        .flatMap(
+            responses -> {
+              List<Single<OrderDto>> verifications =
+                  responses.stream()
+                      .map(
+                          response ->
+                              verifyOrder(response, roundId, userId)
+                                  .onErrorReturnItem(new OrderDto()))
+                      .collect(Collectors.toList());
+
+              return Single.zip(
+                  verifications,
+                  results -> {
+                    List<OrderDto> verifiedOrders = new ArrayList<>();
+                    for (Object result : results) {
+                      verifiedOrders.add((OrderDto) result);
+                    }
+                    return verifiedOrders;
+                  });
+            });
+  }
+
+  private Single<OrderDto> verifyOrder(CreateOrderResponseDTO response, int roundId, int userId) {
     log.info("Starting verify order creation test");
     return orderDaoFactory
         .rxGetOrCreateEntityShardDao(Integer.toString(roundId), userId)
@@ -105,6 +165,19 @@ public class OrderDaoFactoryIntegrationTestINFINITE extends BaseShardTest {
         });
   }
 
+  private void scheduleNextBulkBatch(
+      AtomicInteger roundId, AtomicInteger userId, CountDownLatch latch) {
+    vertx.setTimer(
+        BATCH_DELAY_MS,
+        timerId -> {
+          userId.incrementAndGet();
+          roundId.incrementAndGet();
+
+          logProgressIfNeeded(userId.get());
+          createOrdersBulkBatch(roundId, userId, latch);
+        });
+  }
+
   private void logProgressIfNeeded(int currentUserId) {
     if (currentUserId % PROGRESS_LOG_INTERVAL == 0) {
       log.info(
@@ -120,5 +193,12 @@ public class OrderDaoFactoryIntegrationTestINFINITE extends BaseShardTest {
     log.error("Error in order creation batch", e);
     totalErrors.incrementAndGet();
     vertx.setTimer(BATCH_DELAY_MS, timerId -> createOrdersBatch(roundId, userId, latch));
+  }
+
+  private void handleBulkBatchError(
+      AtomicInteger roundId, AtomicInteger userId, CountDownLatch latch, Exception e) {
+    log.error("Error in order creation batch", e);
+    totalErrors.incrementAndGet();
+    vertx.setTimer(BATCH_DELAY_MS, timerId -> createOrdersBulkBatch(roundId, userId, latch));
   }
 }

@@ -2,9 +2,9 @@ package com.dream11.shardwizard.example.order.impl;
 
 import com.dream11.shardwizard.constant.RdsCluster;
 import com.dream11.shardwizard.dao.impl.mysqlvertx.MySqlVertxBaseDao;
-import com.dream11.shardwizard.example.order.CreateOrderResponse;
+import com.dream11.shardwizard.example.dto.CreateOrderResponseDTO;
+import com.dream11.shardwizard.example.dto.OrderDto;
 import com.dream11.shardwizard.example.order.OrderDao;
-import com.dream11.shardwizard.example.order.OrderDto;
 import com.dream11.shardwizard.model.ShardDetails;
 import io.reactivex.Single;
 import io.vertx.reactivex.core.Vertx;
@@ -22,7 +22,7 @@ public class MySqlOrderDaoImpl extends MySqlVertxBaseDao implements OrderDao {
   }
 
   @Override
-  public Single<CreateOrderResponse> create(OrderDto orderDto) {
+  public Single<CreateOrderResponseDTO> create(OrderDto orderDto) {
     return Single.just(1)
         .flatMap(
             any -> {
@@ -41,7 +41,7 @@ public class MySqlOrderDaoImpl extends MySqlVertxBaseDao implements OrderDao {
                   .flatMap(
                       result -> {
                         log.info("Order Created before: {}", orderId);
-                        return Single.just(new CreateOrderResponse(orderId));
+                        return Single.just(new CreateOrderResponseDTO(orderId));
                       })
                   .doOnSuccess(
                       response -> {
@@ -50,13 +50,13 @@ public class MySqlOrderDaoImpl extends MySqlVertxBaseDao implements OrderDao {
                   .onErrorResumeNext(
                       throwable -> {
                         log.error("MySqlOrderDto creation failed: {}", throwable.getMessage());
-                        return Single.just(new CreateOrderResponse(orderId));
+                        return Single.just(new CreateOrderResponseDTO(orderId));
                       });
             });
   }
 
   @Override
-  public Single<List<CreateOrderResponse>> createBulk(List<OrderDto> orderDtos) {
+  public Single<List<CreateOrderResponseDTO>> createBulk(List<OrderDto> orderDtos) {
     return null;
   }
 
@@ -117,7 +117,7 @@ public class MySqlOrderDaoImpl extends MySqlVertxBaseDao implements OrderDao {
   }
 
   @Override
-  public Single<List<CreateOrderResponse>> createBatch(List<OrderDto> orders) {
+  public Single<List<CreateOrderResponseDTO>> createBatch(List<OrderDto> orders) {
     String query =
         "INSERT INTO orders(order_id, order_name, order_date, order_amount, user_id) VALUES (?, ?, ?, ?, ?)";
     List<Tuple> tuples = new ArrayList<>();
@@ -138,9 +138,9 @@ public class MySqlOrderDaoImpl extends MySqlVertxBaseDao implements OrderDao {
         .rxExecuteBatchPreparedQuery(RdsCluster.WRITER, query, tuples)
         .map(
             rowSet -> {
-              List<CreateOrderResponse> responses = new ArrayList<>();
+              List<CreateOrderResponseDTO> responses = new ArrayList<>();
               for (OrderDto order : orders) {
-                responses.add(new CreateOrderResponse(order.getOrderId()));
+                responses.add(new CreateOrderResponseDTO(order.getOrderId()));
               }
 
               return responses;
@@ -168,7 +168,7 @@ public class MySqlOrderDaoImpl extends MySqlVertxBaseDao implements OrderDao {
   }
 
   @Override
-  public Single<CreateOrderResponse> rxExecuteQuery(OrderDto orderDto) {
+  public Single<CreateOrderResponseDTO> rxExecuteQuery(OrderDto orderDto) {
     return Single.just(1)
         .flatMap(
             any -> {
@@ -188,7 +188,7 @@ public class MySqlOrderDaoImpl extends MySqlVertxBaseDao implements OrderDao {
                   .flatMap(
                       result -> {
                         log.info("Order Created before: {}", orderId);
-                        return Single.just(new CreateOrderResponse(orderId));
+                        return Single.just(new CreateOrderResponseDTO(orderId));
                       })
                   .doOnSuccess(
                       response -> {
@@ -197,7 +197,7 @@ public class MySqlOrderDaoImpl extends MySqlVertxBaseDao implements OrderDao {
                   .onErrorResumeNext(
                       throwable -> {
                         log.error("MySqlOrderDto creation failed: {}", throwable);
-                        return Single.just(new CreateOrderResponse(orderId));
+                        return Single.just(new CreateOrderResponseDTO(orderId));
                       });
             });
   }

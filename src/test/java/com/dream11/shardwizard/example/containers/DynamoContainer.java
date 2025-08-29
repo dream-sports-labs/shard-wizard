@@ -1,6 +1,6 @@
 package com.dream11.shardwizard.example.containers;
 
-import static com.dream11.shardwizard.example.helpers.Constants.DYNAMODB_IMAGE;
+import static com.dream11.shardwizard.example.utils.Constants.DYNAMODB_IMAGE;
 
 import java.net.URI;
 import org.testcontainers.containers.GenericContainer;

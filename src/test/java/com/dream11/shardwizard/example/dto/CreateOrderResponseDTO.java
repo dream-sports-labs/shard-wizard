@@ -1,4 +1,4 @@
-package com.dream11.shardwizard.example.order;
+package com.dream11.shardwizard.example.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Data
 @NoArgsConstructor
-public class CreateOrderResponse {
+public class CreateOrderResponseDTO {
 
   String orderId;
 }

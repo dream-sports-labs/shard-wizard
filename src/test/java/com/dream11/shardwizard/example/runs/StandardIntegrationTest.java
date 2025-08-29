@@ -3,8 +3,8 @@ package com.dream11.shardwizard.example.runs;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.dream11.shardwizard.example.BaseShardTest;
-import com.dream11.shardwizard.example.order.CreateOrderResponse;
-import com.dream11.shardwizard.example.order.OrderDto;
+import com.dream11.shardwizard.example.dto.CreateOrderResponseDTO;
+import com.dream11.shardwizard.example.dto.OrderDto;
 import com.dream11.shardwizard.exception.EntityNotMappedToShardException;
 import com.dream11.shardwizard.exception.ShardNotPresentException;
 import com.dream11.shardwizard.model.ShardDetails;
@@ -132,10 +132,10 @@ public class StandardIntegrationTest extends BaseShardTest { // TODO - TO CHECK
         v -> {
           try {
             OrderDto user1ShardOrder = createSampleOrder(userId1, roundId);
-            Single<CreateOrderResponse> ord1 = saveOrder(user1ShardOrder, roundId, userId1);
+            Single<CreateOrderResponseDTO> ord1 = saveOrder(user1ShardOrder, roundId, userId1);
 
             OrderDto user2ShardOrder = createSampleOrder(userId2, roundId);
-            Single<CreateOrderResponse> ord2 = saveOrder(user2ShardOrder, roundId, userId2);
+            Single<CreateOrderResponseDTO> ord2 = saveOrder(user2ShardOrder, roundId, userId2);
 
             // Chain all operations together
             Single.zip(

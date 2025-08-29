@@ -1,4 +1,4 @@
-package com.dream11.shardwizard.example.helpers;
+package com.dream11.shardwizard.example.utils;
 
 import org.testcontainers.utility.DockerImageName;
 

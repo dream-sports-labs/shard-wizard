@@ -1,6 +1,6 @@
 package com.dream11.shardwizard.example;
 
-import static com.dream11.shardwizard.example.helpers.Constants.TABLE_NAME;
+import static com.dream11.shardwizard.example.utils.Constants.TABLE_NAME;
 import static com.dream11.shardwizard.example.utils.DynamoContainerUtils.defaultThroughput;
 
 import com.dream11.shardwizard.example.containers.DynamoContainer;
@@ -103,7 +103,7 @@ public class StandardIntegrationTestSetup {
             .accessKey("dummy")
             .secretKey("dummy")
             .endpoint(endpoint)
-            .region("us-east-1")
+            .region(Region.US_EAST_1.toString())
             .build();
     dynamoContainerUtils.initializeTestEnvironment(config);
 

@@ -1,11 +1,11 @@
-package com.dream11.shardwizard.example.runs.mysql;
+package com.dream11.shardwizard.example.runs.client.dynamo;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.dream11.shardwizard.example.BaseShardTest;
-import com.dream11.shardwizard.example.order.CreateOrderResponse;
-import com.dream11.shardwizard.example.order.OrderDto;
+import com.dream11.shardwizard.example.dto.CreateOrderResponseDTO;
+import com.dream11.shardwizard.example.dto.OrderDto;
 import com.dream11.shardwizard.model.ShardDetails;
 import io.reactivex.Single;
 import java.util.ArrayList;
@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 @Slf4j
 public class OrderDaoFactoryConfigTest extends BaseShardTest {
 
-  private static final int CONFIGURED_ROUND = 1023;
+  private static final int CONFIGURED_ROUND = 1013;
   private static final int INVALID_ROUND = 1011;
   private static final int USER_ID_1 = 60009005;
   private static final int USER_ID_2 = 60009006;
@@ -84,8 +84,8 @@ public class OrderDaoFactoryConfigTest extends BaseShardTest {
   private void runShardDetailsTest(
       int roundId, CountDownLatch latch, AtomicReference<Throwable> error) {
     List<ShardDetails> expectedShardDetails = new ArrayList<>();
-    expectedShardDetails.add(createMySQLShard(6, 5438));
-    expectedShardDetails.add(createMySQLShard(7, 5439));
+    expectedShardDetails.add(createPostgresShard(1, 5433));
+    expectedShardDetails.add(createDynamoShard(6, 9111));
 
     orderDaoFactory
         .rxGetOrCreateEntityShardDetails(Integer.toString(roundId))
@@ -138,7 +138,8 @@ public class OrderDaoFactoryConfigTest extends BaseShardTest {
             e -> handleTestError("Error in order creation test", e, latch, error));
   }
 
-  private Single<OrderDto> verifyFirstOrder(CreateOrderResponse response, int roundId, int userId) {
+  private Single<OrderDto> verifyFirstOrder(
+      CreateOrderResponseDTO response, int roundId, int userId) {
     assertNotNull(response, "Order 1 creation response should not be null");
     String orderId = response.getOrderId();
     assertNotNull(orderId, "Order 1 ID should not be null");
@@ -169,7 +170,7 @@ public class OrderDaoFactoryConfigTest extends BaseShardTest {
   }
 
   private Single<OrderDto> verifySecondOrder(
-      CreateOrderResponse response, int roundId, int userId) {
+      CreateOrderResponseDTO response, int roundId, int userId) {
     assertNotNull(response, "Order 2 creation response should not be null");
     String orderId = response.getOrderId();
     assertNotNull(orderId, "Order 2 ID should not be null");

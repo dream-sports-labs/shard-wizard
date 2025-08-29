@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+import software.amazon.awssdk.regions.Region;
 
 @Slf4j
 public class ShardManagerTestSetup {
@@ -108,7 +109,7 @@ public class ShardManagerTestSetup {
             .accessKey("dummy")
             .secretKey("dummy")
             .endpoint(endpoint)
-            .region("us-east-1")
+            .region(Region.US_EAST_1.toString())
             .build();
 
     dynamoContainerUtils.initializeTestEnvironment(config);

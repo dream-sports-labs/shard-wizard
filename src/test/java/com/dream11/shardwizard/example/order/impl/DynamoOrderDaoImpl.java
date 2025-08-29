@@ -1,11 +1,11 @@
 package com.dream11.shardwizard.example.order.impl;
 
-import static com.dream11.shardwizard.example.helpers.Constants.TABLE_NAME;
+import static com.dream11.shardwizard.example.utils.Constants.TABLE_NAME;
 
 import com.dream11.shardwizard.dao.impl.dynamo.DynamoBaseDao;
-import com.dream11.shardwizard.example.order.CreateOrderResponse;
+import com.dream11.shardwizard.example.dto.CreateOrderResponseDTO;
+import com.dream11.shardwizard.example.dto.OrderDto;
 import com.dream11.shardwizard.example.order.OrderDao;
-import com.dream11.shardwizard.example.order.OrderDto;
 import com.dream11.shardwizard.model.ShardDetails;
 import io.reactivex.Single;
 import io.vertx.reactivex.core.Vertx;
@@ -30,7 +30,7 @@ public class DynamoOrderDaoImpl extends DynamoBaseDao implements OrderDao {
   }
 
   @Override
-  public Single<CreateOrderResponse> create(OrderDto orderDto) {
+  public Single<CreateOrderResponseDTO> create(OrderDto orderDto) {
     return Single.defer(
         () -> {
           String orderId = createOrderId(orderDto);
@@ -47,12 +47,12 @@ public class DynamoOrderDaoImpl extends DynamoBaseDao implements OrderDao {
 
           return dynamoVertxClient
               .rxWriteItem(TABLE_NAME, item)
-              .map(ignored -> new CreateOrderResponse(orderId))
+              .map(ignored -> new CreateOrderResponseDTO(orderId))
               .doOnSuccess(resp -> log.info("Order Created: {}", orderId))
               .onErrorReturn(
                   throwable -> {
                     log.error("Failed to create order in DynamoDB {}", throwable.getMessage());
-                    return new CreateOrderResponse(orderId);
+                    return new CreateOrderResponseDTO(orderId);
                   });
         });
   }
@@ -138,7 +138,7 @@ public class DynamoOrderDaoImpl extends DynamoBaseDao implements OrderDao {
   }
 
   @Override
-  public Single<List<CreateOrderResponse>> createBatch(List<OrderDto> orders) {
+  public Single<List<CreateOrderResponseDTO>> createBatch(List<OrderDto> orders) {
     return null;
   }
 
@@ -158,7 +158,7 @@ public class DynamoOrderDaoImpl extends DynamoBaseDao implements OrderDao {
   }
 
   @Override
-  public Single<CreateOrderResponse> rxExecuteQuery(OrderDto orderDto) {
+  public Single<CreateOrderResponseDTO> rxExecuteQuery(OrderDto orderDto) {
     return null;
   }
 
@@ -195,11 +195,11 @@ public class DynamoOrderDaoImpl extends DynamoBaseDao implements OrderDao {
   }
 
   @Override
-  public Single<List<CreateOrderResponse>> createBulk(List<OrderDto> orderDtos) {
+  public Single<List<CreateOrderResponseDTO>> createBulk(List<OrderDto> orderDtos) {
     return Single.defer(
         () -> {
           List<Map<String, AttributeValue>> itemsBatch = new ArrayList<>();
-          List<CreateOrderResponse> responses = new ArrayList<>();
+          List<CreateOrderResponseDTO> responses = new ArrayList<>();
           for (OrderDto dto : orderDtos) {
             String orderId = createOrderId(dto);
 
@@ -213,7 +213,7 @@ public class DynamoOrderDaoImpl extends DynamoBaseDao implements OrderDao {
             item.put("user_id", AttributeValue.builder().s(dto.getUserId()).build());
 
             itemsBatch.add(item);
-            responses.add(new CreateOrderResponse(orderId));
+            responses.add(new CreateOrderResponseDTO(orderId));
           }
 
           return dynamoVertxClient

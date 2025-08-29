@@ -1,10 +1,10 @@
-package com.dream11.shardwizard.example.runs.mysql;
+package com.dream11.shardwizard.example.runs.client.postgres;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.dream11.shardwizard.example.BaseShardTest;
-import com.dream11.shardwizard.example.order.CreateOrderResponse;
-import com.dream11.shardwizard.example.order.OrderDto;
+import com.dream11.shardwizard.example.dto.CreateOrderResponseDTO;
+import com.dream11.shardwizard.example.dto.OrderDto;
 import io.reactivex.Single;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -15,11 +15,12 @@ import org.junit.jupiter.api.Test;
 
 @Slf4j
 public class OrderDaoFactoryIntegrationTestINFINITE extends BaseShardTest {
+
   private final AtomicLong totalOrdersCreated = new AtomicLong(0);
   private final AtomicLong totalErrors = new AtomicLong(0);
   private static final int BATCH_DELAY_MS = 1000;
   private static final int PROGRESS_LOG_INTERVAL = 100;
-  private static final int INITIAL_ROUND_ID = 1023;
+  private static final int INITIAL_ROUND_ID = 1009;
   private static final int INITIAL_USER_ID = 1;
 
   @BeforeAll
@@ -61,7 +62,7 @@ public class OrderDaoFactoryIntegrationTestINFINITE extends BaseShardTest {
         .flatMap(response -> verifyOrder(response, roundId, userId));
   }
 
-  private Single<OrderDto> verifyOrder(CreateOrderResponse response, int roundId, int userId) {
+  private Single<OrderDto> verifyOrder(CreateOrderResponseDTO response, int roundId, int userId) {
     log.info("Starting verify order creation test");
     return orderDaoFactory
         .rxGetOrCreateEntityShardDao(Integer.toString(roundId), userId)
