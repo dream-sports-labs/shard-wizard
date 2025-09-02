@@ -1,5 +1,8 @@
 package com.dream11.shardwizard.example.utils;
 
+import static com.dream11.shardwizard.example.BaseShardTest.DEFAULT_ACCESS_KEY;
+import static com.dream11.shardwizard.example.BaseShardTest.DEFAULT_SECRET_KEY;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
@@ -47,7 +50,8 @@ public class DynamoContainerUtils {
         .endpointOverride(URI.create(LOCAL_ENDPOINT))
         .region(Region.of(DEFAULT_REGION))
         .credentialsProvider(
-            StaticCredentialsProvider.create(AwsBasicCredentials.create("dummy", "dummy")))
+            StaticCredentialsProvider.create(
+                AwsBasicCredentials.create(DEFAULT_ACCESS_KEY, DEFAULT_SECRET_KEY)))
         .build();
   }
 
