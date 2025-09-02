@@ -11,6 +11,7 @@ import io.vertx.reactivex.core.Vertx;
 import io.vertx.reactivex.sqlclient.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.function.Function;
 import lombok.extern.slf4j.Slf4j;
 
@@ -60,11 +61,17 @@ public class PostgresOrderDaoImpl extends PostgresBaseDao implements OrderDao {
 
   private String createOrderId(OrderDto orderDto) {
     return "ORD"
+        + getRandomSuffix()
         + getShardDetails().getShardId()
         + "-"
         + orderDto.getUserId()
         + "-"
         + orderDto.getRoundId();
+  }
+
+  private static String getRandomSuffix() {
+    String randomSuffix = UUID.randomUUID().toString().replaceAll("-", "").substring(0, 4);
+    return randomSuffix;
   }
 
   public Single<OrderDto> get(String orderId) {
