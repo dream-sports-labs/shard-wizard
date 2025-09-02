@@ -156,7 +156,6 @@ public abstract class BaseShardTest {
             .readerHost(DEFAULT_HOST)
             .password(DEFAULT_POSTGRES_PASSWORD)
             .maxWaitQueueSize(DEFAULT_MAX_WAIT_QUEUE_SIZE)
-            .tableConnectionMap(Map.of())
             .accessKey(DEFAULT_ACCESS_KEY)
             .secretKey(DEFAULT_SECRET_KEY)
             .region(Region.US_EAST_1.toString())
@@ -189,7 +188,6 @@ public abstract class BaseShardTest {
             .secretKey(DEFAULT_SECRET_KEY)
             .endpoint("http://localhost:" + port)
             .region(Region.US_EAST_1.toString())
-            .tableConnectionMap(Map.of())
             .circuitBreaker(createCircuitBreakerConfig())
             .build();
 

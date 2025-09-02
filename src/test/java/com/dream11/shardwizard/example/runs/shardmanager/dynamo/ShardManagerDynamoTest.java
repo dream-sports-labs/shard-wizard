@@ -16,7 +16,6 @@ import com.typesafe.config.ConfigFactory;
 import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.core.Vertx;
 import java.net.URI;
-import java.util.HashMap;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.After;
@@ -148,7 +147,6 @@ public class ShardManagerDynamoTest {
   private void verifyUpdateResponse(
       ShardUpdateResponse response, long shardId, ShardConfig newConfig) {
     // required for Dynamo test Cases as it is responding with default value
-    newConfig.getShardConnectionParams().setTableConnectionMap(new HashMap<>());
     newConfig.getShardConnectionParams().setAccessKey("");
     newConfig.getShardConnectionParams().setSecretKey("");
 

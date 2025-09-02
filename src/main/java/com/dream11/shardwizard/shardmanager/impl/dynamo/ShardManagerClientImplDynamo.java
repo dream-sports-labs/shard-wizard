@@ -70,7 +70,6 @@ public class ShardManagerClientImplDynamo implements ShardManagerClient {
   public static final String DATABASE = "database";
   public static final String ACCESS_KEY = "accessKey";
   public static final String SECRET_KEY = "secretKey";
-  public static final String TABLE_CONNECTION_MAP = "tableConnectionMap";
   public static final String DATABASE_TYPE = "databaseType";
   public static final String ENDPOINT = "endpoint";
   public static final String REGION = "region";
@@ -146,24 +145,6 @@ public class ShardManagerClientImplDynamo implements ShardManagerClient {
     shardConnectionMap.put(DATABASE, AttributeValue.builder().s(params.getDatabase()).build());
     shardConnectionMap.put(ACCESS_KEY, AttributeValue.builder().s(params.getAccessKey()).build());
     shardConnectionMap.put(SECRET_KEY, AttributeValue.builder().s(params.getSecretKey()).build());
-
-    // tableConnectionMap (nested map)
-    Map<String, AttributeValue> tableConnectionMapAttr = new HashMap<>();
-
-    for (Map.Entry<String, Object> entry : params.getTableConnectionMap().entrySet()) {
-      ShardConnectionParameters.TableConnectionInfo infoObj =
-          (ShardConnectionParameters.TableConnectionInfo) entry.getValue();
-
-      Map<String, AttributeValue> info =
-          Map.of(
-              ENDPOINT, AttributeValue.builder().s(infoObj.getEndpoint()).build(),
-              REGION, AttributeValue.builder().s(infoObj.getRegion()).build());
-
-      tableConnectionMapAttr.put(entry.getKey(), AttributeValue.builder().m(info).build());
-    }
-
-    shardConnectionMap.put(
-        TABLE_CONNECTION_MAP, AttributeValue.builder().m(tableConnectionMapAttr).build());
 
     Map<String, AttributeValue> detailsMap =
         Map.of(
@@ -472,25 +453,6 @@ public class ShardManagerClientImplDynamo implements ShardManagerClient {
             .region(
                 shardConnMap.getOrDefault(REGION, AttributeValue.builder().s(null).build()).s());
 
-    // Handle tableConnectionMap
-    Map<String, AttributeValue> rawTableMap =
-        shardConnMap
-            .getOrDefault(TABLE_CONNECTION_MAP, AttributeValue.builder().m(Map.of()).build())
-            .m();
-    Map<String, ShardConnectionParameters.TableConnectionInfo> tableConnectionMap = new HashMap<>();
-
-    for (Map.Entry<String, AttributeValue> entry : rawTableMap.entrySet()) {
-      Map<String, AttributeValue> valueMap = entry.getValue().m();
-      String endpoint = valueMap.getOrDefault(ENDPOINT, AttributeValue.builder().s("").build()).s();
-      String region = valueMap.getOrDefault(REGION, AttributeValue.builder().s("").build()).s();
-      tableConnectionMap.put(
-          entry.getKey(), new ShardConnectionParameters.TableConnectionInfo(endpoint, region));
-    }
-
-    connBuilder.tableConnectionMap(
-        (Map) tableConnectionMap); // Cast required if tableConnectionMap is typed as Map<String,
-    // Object>
-
     return ShardConfig.builder()
         .databaseType(DatabaseType.valueOf(databaseTypeStr))
         .shardConnectionParams(connBuilder.build())
@@ -615,22 +577,6 @@ public class ShardManagerClientImplDynamo implements ShardManagerClient {
     }
     if (params.getSecretKey() != null) {
       shardConnectionMap.put(SECRET_KEY, AttributeValue.builder().s(params.getSecretKey()).build());
-    }
-
-    // Handle tableConnectionMap
-    if (params.getTableConnectionMap() != null && !params.getTableConnectionMap().isEmpty()) {
-      Map<String, AttributeValue> tableConnectionMapAttr = new HashMap<>();
-      for (Map.Entry<String, Object> entry : params.getTableConnectionMap().entrySet()) {
-        ShardConnectionParameters.TableConnectionInfo info =
-            (ShardConnectionParameters.TableConnectionInfo) entry.getValue();
-        Map<String, AttributeValue> infoMap =
-            Map.of(
-                ENDPOINT, AttributeValue.builder().s(info.getEndpoint()).build(),
-                REGION, AttributeValue.builder().s(info.getRegion()).build());
-        tableConnectionMapAttr.put(entry.getKey(), AttributeValue.builder().m(infoMap).build());
-      }
-      shardConnectionMap.put(
-          TABLE_CONNECTION_MAP, AttributeValue.builder().m(tableConnectionMapAttr).build());
     }
 
     return shardConnectionMap;
