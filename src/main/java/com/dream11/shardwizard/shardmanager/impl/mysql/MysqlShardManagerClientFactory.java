@@ -7,11 +7,11 @@ import com.dream11.shardwizard.shardmanager.ShardManagerClient;
 import com.dream11.shardwizard.shardmanager.ShardManagerClientFactory;
 import io.vertx.reactivex.core.Vertx;
 
-public class MySqlShardManagerClientFactory implements ShardManagerClientFactory {
+public class MysqlShardManagerClientFactory implements ShardManagerClientFactory {
   @Override
   public ShardManagerClient createClient(Vertx vertx, ShardManagerConfig shardManagerConfig) {
     SqlConfig sqlConfig =
         (SqlConfig) shardManagerConfig.convertToSourceConfig(DatabaseType.MYSQL.name());
-    return new ShardManagerClientImplMySql(vertx, sqlConfig);
+    return new ShardManagerClientImplMysql(vertx, sqlConfig);
   }
 }

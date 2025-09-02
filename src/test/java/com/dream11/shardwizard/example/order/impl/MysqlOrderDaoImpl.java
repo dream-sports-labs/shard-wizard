@@ -1,7 +1,7 @@
 package com.dream11.shardwizard.example.order.impl;
 
 import com.dream11.shardwizard.constant.RdsCluster;
-import com.dream11.shardwizard.dao.impl.mysqlvertx.MySqlVertxBaseDao;
+import com.dream11.shardwizard.dao.impl.mysqlvertx.MysqlVertxBaseDao;
 import com.dream11.shardwizard.example.dto.CreateOrderResponseDTO;
 import com.dream11.shardwizard.example.dto.OrderDto;
 import com.dream11.shardwizard.example.order.OrderDao;
@@ -15,9 +15,9 @@ import java.util.function.Function;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class MySqlOrderDaoImpl extends MySqlVertxBaseDao implements OrderDao {
+public class MysqlOrderDaoImpl extends MysqlVertxBaseDao implements OrderDao {
 
-  public MySqlOrderDaoImpl(Vertx vertx, ShardDetails shardDetails) {
+  public MysqlOrderDaoImpl(Vertx vertx, ShardDetails shardDetails) {
     super(vertx, shardDetails);
   }
 

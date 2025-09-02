@@ -10,13 +10,13 @@ import io.vertx.mysqlclient.MySQLConnectOptions;
 import io.vertx.reactivex.core.Vertx;
 import io.vertx.sqlclient.PoolOptions;
 
-public abstract class MySqlVertxBaseDao extends BaseDaoAbstract {
+public abstract class MysqlVertxBaseDao extends BaseDaoAbstract {
 
   protected final MysqlVertxClient mysqlVertxClient;
   protected final Vertx vertx;
   private final ShardDetails shardDetails;
 
-  protected MySqlVertxBaseDao(Vertx vertx, ShardDetails shardDetails) {
+  protected MysqlVertxBaseDao(Vertx vertx, ShardDetails shardDetails) {
     this.vertx = vertx;
     this.shardDetails = shardDetails;
 

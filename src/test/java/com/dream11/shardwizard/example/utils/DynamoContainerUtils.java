@@ -25,7 +25,7 @@ import software.amazon.awssdk.services.dynamodb.model.*;
 @Slf4j
 public class DynamoContainerUtils {
   private static final String LOCAL_ENDPOINT = "http://localhost:8999";
-  private static final String DEFAULT_REGION = "us-east-1";
+  private static final String DEFAULT_REGION = Region.US_EAST_1.toString();
 
   private final DynamoDbClient dynamoDbClient;
 
@@ -48,7 +48,7 @@ public class DynamoContainerUtils {
         .endpointOverride(URI.create(LOCAL_ENDPOINT))
         .region(Region.of(DEFAULT_REGION))
         .credentialsProvider(
-            StaticCredentialsProvider.create(AwsBasicCredentials.create("test", "test")))
+            StaticCredentialsProvider.create(AwsBasicCredentials.create("dummy", "dummy")))
         .build();
   }
 
@@ -148,6 +148,14 @@ public class DynamoContainerUtils {
             Map.of(
                 "port",
                 port,
+                "endpoint",
+                "http://localhost:" + port,
+                "region",
+                "us-east-1",
+                "accessKey",
+                "dummy",
+                "secretKey",
+                "dummy",
                 "readerHost",
                 "localhost",
                 "writerHost",

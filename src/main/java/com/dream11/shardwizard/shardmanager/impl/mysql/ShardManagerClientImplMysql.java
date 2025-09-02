@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class ShardManagerClientImplMySql implements ShardManagerClient {
+public class ShardManagerClientImplMysql implements ShardManagerClient {
 
   private final Vertx vertx;
   private MySQLPool masterPool;
@@ -44,7 +44,7 @@ public class ShardManagerClientImplMySql implements ShardManagerClient {
   private final MySQLConnectOptions slaveOptions;
   private final PoolOptions poolOptions;
 
-  public ShardManagerClientImplMySql(Vertx vertx, SqlConfig sqlConfig) {
+  public ShardManagerClientImplMysql(Vertx vertx, SqlConfig sqlConfig) {
     this.vertx = vertx;
 
     JsonObject config = getMySqlConfigJson(sqlConfig);
@@ -152,7 +152,7 @@ public class ShardManagerClientImplMySql implements ShardManagerClient {
         .rxBegin()
         .flatMap(
             tx ->
-                tx.preparedQuery(MySqlQueries.CREATE_SHARD_QUERY)
+                tx.preparedQuery(MysqlQueries.CREATE_SHARD_QUERY)
                     .rxExecute(Tuple.of(isDefault, JsonObject.mapFrom(details).toString()))
                     .map(rs -> rs.property(MySQLClient.LAST_INSERTED_ID))
                     .flatMap(
@@ -185,7 +185,7 @@ public class ShardManagerClientImplMySql implements ShardManagerClient {
               String shardIdsStr =
                   shardIds.stream().map(String::valueOf).collect(Collectors.joining(", "));
               String updateQuery =
-                  MySqlQueries.SET_DEFAULT_FLAG_QUERY_PREFIX.replace("?", "" + isDefault)
+                  MysqlQueries.SET_DEFAULT_FLAG_QUERY_PREFIX.replace("?", "" + isDefault)
                       + shardIdsStr
                       + ");";
 
@@ -199,7 +199,7 @@ public class ShardManagerClientImplMySql implements ShardManagerClient {
   @Override
   public Single<ShardManagerResponse> rxDeactivateShard(long shardId) {
     return masterPool
-        .preparedQuery(MySqlQueries.DEACTIVATE_SHARD_QUERY)
+        .preparedQuery(MysqlQueries.DEACTIVATE_SHARD_QUERY)
         .rxExecute(Tuple.of(shardId))
         .map(
             rows -> {
@@ -213,9 +213,9 @@ public class ShardManagerClientImplMySql implements ShardManagerClient {
   @Override
   public Single<List<ShardDetails>> rxGetActiveShards() {
     return slavePool
-        .preparedQuery(MySqlQueries.GET_ALL_SHARDS_QUERY)
+        .preparedQuery(MysqlQueries.GET_ALL_SHARDS_QUERY)
         .rxExecute(Tuple.of(true))
-        .map(ShardManagerClientImplMySql::getShardDetailsFromRowSet);
+        .map(ShardManagerClientImplMysql::getShardDetailsFromRowSet);
   }
 
   @Override
@@ -224,9 +224,9 @@ public class ShardManagerClientImplMySql implements ShardManagerClient {
         .rxBegin()
         .flatMap(
             tx ->
-                tx.preparedQuery(MySqlQueries.GET_SHARD_DETAILS_FOR_ENTITY_ID_QUERY)
+                tx.preparedQuery(MysqlQueries.GET_SHARD_DETAILS_FOR_ENTITY_ID_QUERY)
                     .rxExecute(Tuple.of(entityId))
-                    .map(ShardManagerClientImplMySql::getShardDetailsFromRowSet)
+                    .map(ShardManagerClientImplMysql::getShardDetailsFromRowSet)
                     .flatMap(
                         shardDetails -> {
                           if (shardDetails.isEmpty()) {
@@ -259,9 +259,9 @@ public class ShardManagerClientImplMySql implements ShardManagerClient {
   @Override
   public Single<EntityShardDetailsMapping> rxFindMapping(String entityId) {
     return masterPool
-        .preparedQuery(MySqlQueries.GET_SHARD_DETAILS_FOR_ENTITY_ID_QUERY)
+        .preparedQuery(MysqlQueries.GET_SHARD_DETAILS_FOR_ENTITY_ID_QUERY)
         .rxExecute(Tuple.of(entityId))
-        .map(ShardManagerClientImplMySql::getShardDetailsFromRowSet)
+        .map(ShardManagerClientImplMysql::getShardDetailsFromRowSet)
         .flatMap(
             shardDetails -> {
               if (shardDetails.isEmpty()) {
@@ -282,9 +282,9 @@ public class ShardManagerClientImplMySql implements ShardManagerClient {
 
   private Single<EntityShardDetailsMapping> createDefaultEntityShardMapping(
       Transaction tx, String entityId) {
-    return tx.preparedQuery(MySqlQueries.GET_DEFAULT_SHARDS_QUERY)
+    return tx.preparedQuery(MysqlQueries.GET_DEFAULT_SHARDS_QUERY)
         .rxExecute()
-        .map(ShardManagerClientImplMySql::getShardDetailsFromRowSet)
+        .map(ShardManagerClientImplMysql::getShardDetailsFromRowSet)
         .flatMap(
             defaultShards -> {
               if (defaultShards.isEmpty()) {
@@ -292,7 +292,7 @@ public class ShardManagerClientImplMySql implements ShardManagerClient {
               }
               List<Long> defaultShardIds =
                   defaultShards.stream().map(ShardDetails::getShardId).collect(Collectors.toList());
-              return tx.preparedQuery(MySqlQueries.CREATE_ENTITY_SHARD_MAPPING_QUERY)
+              return tx.preparedQuery(MysqlQueries.CREATE_ENTITY_SHARD_MAPPING_QUERY)
                   .rxExecute(Tuple.of(entityId, new JsonArray(defaultShardIds).encode()))
                   .map(res -> new EntityShardDetailsMapping(entityId, defaultShards));
             });
@@ -301,9 +301,9 @@ public class ShardManagerClientImplMySql implements ShardManagerClient {
   @Override
   public Single<List<EntityShardDetailsMapping>> rxListEntityShardMappings() {
     return slavePool
-        .preparedQuery(MySqlQueries.GET_SHARD_DETAILS_FOR_ALL_ENTITIES_QUERY)
+        .preparedQuery(MysqlQueries.GET_SHARD_DETAILS_FOR_ALL_ENTITIES_QUERY)
         .rxExecute()
-        .map(ShardManagerClientImplMySql::getEntityIdToActiveShardsMap)
+        .map(ShardManagerClientImplMysql::getEntityIdToActiveShardsMap)
         .map(
             entityIdToShardDetailsMap ->
                 entityIdToShardDetailsMap.entrySet().stream()
@@ -314,7 +314,7 @@ public class ShardManagerClientImplMySql implements ShardManagerClient {
   @Override
   public Single<ShardManagerResponse> rxDeleteEntityShardMapping(String entityId) {
     return masterPool
-        .preparedQuery(MySqlQueries.DELETE_ENTITY_SHARD_MAPPING_QUERY)
+        .preparedQuery(MysqlQueries.DELETE_ENTITY_SHARD_MAPPING_QUERY)
         .rxExecute(Tuple.of(entityId))
         .map(
             rows -> {
@@ -347,7 +347,7 @@ public class ShardManagerClientImplMySql implements ShardManagerClient {
                 return Single.error(new IllegalArgumentException("Invalid shardIds."));
               }
               return masterPool
-                  .preparedQuery(MySqlQueries.CREATE_ENTITY_SHARD_MAPPING_QUERY)
+                  .preparedQuery(MysqlQueries.CREATE_ENTITY_SHARD_MAPPING_QUERY)
                   .rxExecute(Tuple.of(entityId, new JsonArray(shardIds).encode()));
             })
         .map(any -> new ShardManagerResponse(true, "Mapping created"));
@@ -361,7 +361,7 @@ public class ShardManagerClientImplMySql implements ShardManagerClient {
         .flatMap(
             tx -> {
               // First get current details
-              return tx.preparedQuery(MySqlQueries.GET_SHARD_DETAILS_QUERY)
+              return tx.preparedQuery(MysqlQueries.GET_SHARD_DETAILS_QUERY)
                   .rxExecute(Tuple.of(shardId))
                   .flatMap(
                       currentResult -> {
@@ -371,7 +371,7 @@ public class ShardManagerClientImplMySql implements ShardManagerClient {
                               new IllegalArgumentException("Shard not found with id: " + shardId));
                         }
                         ShardDetails currentShard = currentShards.get(0);
-                        return tx.preparedQuery(MySqlQueries.SET_SHARD_DETAILS_QUERY)
+                        return tx.preparedQuery(MysqlQueries.SET_SHARD_DETAILS_QUERY)
                             .rxExecute(Tuple.of(JsonObject.mapFrom(details).toString(), shardId))
                             .flatMap(
                                 updateResult -> {
@@ -381,7 +381,7 @@ public class ShardManagerClientImplMySql implements ShardManagerClient {
                                             "Failed to update shard with id: " + shardId));
                                   }
                                   // Then fetch the updated details
-                                  return tx.preparedQuery(MySqlQueries.GET_SHARD_DETAILS_QUERY)
+                                  return tx.preparedQuery(MysqlQueries.GET_SHARD_DETAILS_QUERY)
                                       .rxExecute(Tuple.of(shardId))
                                       .map(
                                           rows -> {

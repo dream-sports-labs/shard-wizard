@@ -73,7 +73,7 @@ public class OrderAbstractDaoFactoryTest extends BaseShardTest {
   @Test
   /**
    * Test that verifies the correct DAO implementation is returned based on the entity ID Should
-   * return PostgresOrderDaoImpl for one entity ID and MySqlOrderDaoImpl for another
+   * return PostgresOrderDaoImpl for one entity ID and MysqlOrderDaoImpl for another
    */
   void shouldReturnCorrectDaoImplementation() throws Exception {
     runDaoImplementationTest("1234", 1111, "1234", 2222);

@@ -80,15 +80,17 @@ public abstract class AbstractDaoFactory<T> implements DaoFactory<T> {
   }
 
   private ShardConnectionParameters mergeConfigs(
-      ShardConnectionParameters pojo1,
-      ShardConnectionParameters pojo2,
+      ShardConnectionParameters connectionParamsFromDB,
+      ShardConnectionParameters defaultConnectionParams,
       Class<ShardConnectionParameters> kclass) {
     try {
       ObjectMapper objectMapper =
           new ObjectMapper().setSerializationInclusion(JsonInclude.Include.NON_NULL);
       return ConfigBeanFactory.create(
-          ConfigFactory.parseString(objectMapper.writeValueAsString(pojo1))
-              .withFallback(ConfigFactory.parseString(objectMapper.writeValueAsString(pojo2)))
+          ConfigFactory.parseString(objectMapper.writeValueAsString(connectionParamsFromDB))
+              .withFallback(
+                  ConfigFactory.parseString(
+                      objectMapper.writeValueAsString(defaultConnectionParams)))
               .resolve(),
           kclass);
     } catch (IOException e) {

@@ -1,6 +1,6 @@
 package com.dream11.shardwizard.shardmanager.impl.mysql;
 
-public class MySqlQueries {
+public class MysqlQueries {
 
   public static final String CREATE_SHARD_QUERY =
       "INSERT INTO ShardMaster (IsDefault, Details) VALUES (?, ?)";

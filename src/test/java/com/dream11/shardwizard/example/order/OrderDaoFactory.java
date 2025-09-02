@@ -3,7 +3,7 @@ package com.dream11.shardwizard.example.order;
 import com.dream11.shardwizard.constant.DatabaseType;
 import com.dream11.shardwizard.dao.AbstractDaoFactory;
 import com.dream11.shardwizard.example.order.impl.DynamoOrderDaoImpl;
-import com.dream11.shardwizard.example.order.impl.MySqlOrderDaoImpl;
+import com.dream11.shardwizard.example.order.impl.MysqlOrderDaoImpl;
 import com.dream11.shardwizard.example.order.impl.PostgresOrderDaoImpl;
 import com.dream11.shardwizard.model.ShardDetails;
 import io.vertx.reactivex.core.Vertx;
@@ -21,7 +21,7 @@ public class OrderDaoFactory extends AbstractDaoFactory<OrderDao> {
     DatabaseType databaseType = shardDetails.getShardConfig().getDatabaseType();
     switch (databaseType) {
       case MYSQL:
-        return new MySqlOrderDaoImpl(vertx, shardDetails);
+        return new MysqlOrderDaoImpl(vertx, shardDetails);
       case POSTGRES:
         return new PostgresOrderDaoImpl(vertx, shardDetails);
       case DYNAMO:

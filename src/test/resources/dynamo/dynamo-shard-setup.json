@@ -4,8 +4,7 @@
     "initScript": ""
   },
   "shards": [
-    { "port": 9111, "initScript": "" },
-    { "port": 9112, "initScript": "" }
+    { "port": 9111, "initScript": "" }
   ],
   "userName": "",
   "password": "",

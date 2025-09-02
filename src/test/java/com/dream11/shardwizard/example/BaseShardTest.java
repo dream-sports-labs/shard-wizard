@@ -1,6 +1,5 @@
 package com.dream11.shardwizard.example;
 
-import static com.dream11.shardwizard.example.utils.Constants.TABLE_NAME;
 
 import com.dream11.shardwizard.constant.DatabaseType;
 import com.dream11.shardwizard.example.dto.CreateOrderResponseDTO;
@@ -156,6 +155,11 @@ public abstract class BaseShardTest {
             .readerHost(DEFAULT_HOST)
             .password(DEFAULT_POSTGRES_PASSWORD)
             .maxWaitQueueSize(DEFAULT_MAX_WAIT_QUEUE_SIZE)
+            .tableConnectionMap(Map.of())
+            .accessKey("dummy")
+            .secretKey("dummy")
+            .region(Region.US_EAST_1.toString())
+            .endpoint("http://localhost:" + port)
             .connectionTimeoutMs(DEFAULT_CONNECTION_TIMEOUT_MS)
             .circuitBreaker(createCircuitBreakerConfig())
             .build();
@@ -169,15 +173,6 @@ public abstract class BaseShardTest {
 
   protected static ShardDetails createDynamoShard(int shardId, int port) {
 
-    Map<String, Object> tableConnectionMap =
-        Map.of(
-            TABLE_NAME,
-            Map.of(
-                "endpoint",
-                "http://localhost:" + port,
-                "region",
-                Region.US_EAST_1.toString().toLowerCase()));
-
     ShardConnectionParameters shardConnectionParams =
         ShardConnectionParameters.builder()
             .port(port)
@@ -189,9 +184,11 @@ public abstract class BaseShardTest {
             .password(DEFAULT_POSTGRES_PASSWORD)
             .maxWaitQueueSize(DEFAULT_MAX_WAIT_QUEUE_SIZE)
             .connectionTimeoutMs(DEFAULT_CONNECTION_TIMEOUT_MS)
-            .accessKey("")
-            .secretKey("")
-            .tableConnectionMap(tableConnectionMap)
+            .accessKey("dummy")
+            .secretKey("dummy")
+            .endpoint("http://localhost:" + port)
+            .region(Region.US_EAST_1.toString())
+            .tableConnectionMap(Map.of())
             .circuitBreaker(createCircuitBreakerConfig())
             .build();
 

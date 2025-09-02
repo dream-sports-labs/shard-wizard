@@ -12,7 +12,7 @@ import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public abstract class MySqlHikariBaseDao extends BaseDaoAbstract {
+public abstract class MysqlHikariBaseDao extends BaseDaoAbstract {
 
   // Default configuration constants
   private static final String DEFAULT_POOL_NAME = "mysql-hikari-pool";
@@ -32,7 +32,7 @@ public abstract class MySqlHikariBaseDao extends BaseDaoAbstract {
   private final ShardDetails shardDetails;
   private final ShardConnectionParameters connectionParams;
 
-  protected MySqlHikariBaseDao(Vertx vertx, ShardDetails shardDetails) {
+  protected MysqlHikariBaseDao(Vertx vertx, ShardDetails shardDetails) {
     this.vertx = vertx;
     this.shardDetails = shardDetails;
     this.connectionParams = shardDetails.getShardConfig().getShardConnectionParams();

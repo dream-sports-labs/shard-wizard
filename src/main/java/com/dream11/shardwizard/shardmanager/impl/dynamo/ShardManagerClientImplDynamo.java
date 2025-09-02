@@ -466,7 +466,11 @@ public class ShardManagerClientImplDynamo implements ShardManagerClient {
             .accessKey(
                 shardConnMap.getOrDefault(ACCESS_KEY, AttributeValue.builder().s("").build()).s())
             .secretKey(
-                shardConnMap.getOrDefault(SECRET_KEY, AttributeValue.builder().s("").build()).s());
+                shardConnMap.getOrDefault(SECRET_KEY, AttributeValue.builder().s("").build()).s())
+            .endpoint(
+                shardConnMap.getOrDefault(ENDPOINT, AttributeValue.builder().s(null).build()).s())
+            .region(
+                shardConnMap.getOrDefault(REGION, AttributeValue.builder().s(null).build()).s());
 
     // Handle tableConnectionMap
     Map<String, AttributeValue> rawTableMap =
