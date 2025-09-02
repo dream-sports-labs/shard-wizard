@@ -1,6 +1,5 @@
 package com.dream11.shardwizard.example;
 
-
 import com.dream11.shardwizard.constant.DatabaseType;
 import com.dream11.shardwizard.example.dto.CreateOrderResponseDTO;
 import com.dream11.shardwizard.example.dto.OrderDto;
@@ -41,6 +40,8 @@ public abstract class BaseShardTest {
   protected static final String DEFAULT_MYSQL_USERNAME = "mysql";
   protected static final String DEFAULT_MYSQL_PASSWORD = "mysql";
   protected static final String DEFAULT_HOST = "localhost";
+  protected static final String DEFAULT_ACCESS_KEY = "dummy";
+  protected static final String DEFAULT_SECRET_KEY = "dummy";
 
   // CircuitBreaker Configuration Constants
   protected static final boolean CIRCUIT_BREAKER_ENABLED = true;
@@ -156,8 +157,8 @@ public abstract class BaseShardTest {
             .password(DEFAULT_POSTGRES_PASSWORD)
             .maxWaitQueueSize(DEFAULT_MAX_WAIT_QUEUE_SIZE)
             .tableConnectionMap(Map.of())
-            .accessKey("dummy")
-            .secretKey("dummy")
+            .accessKey(DEFAULT_ACCESS_KEY)
+            .secretKey(DEFAULT_SECRET_KEY)
             .region(Region.US_EAST_1.toString())
             .endpoint("http://localhost:" + port)
             .connectionTimeoutMs(DEFAULT_CONNECTION_TIMEOUT_MS)
@@ -177,15 +178,15 @@ public abstract class BaseShardTest {
         ShardConnectionParameters.builder()
             .port(port)
             .maxConnections(DEFAULT_MAX_CONNECTIONS)
-            .writerHost("localhost") // or Docker container hostname
-            .readerHost("localhost")
+            .writerHost(DEFAULT_HOST) // or Docker container hostname
+            .readerHost(DEFAULT_HOST)
             .database(DEFAULT_POSTGRES_DATABASE) // DynamoDB table name or logical group
             .username(DEFAULT_POSTGRES_USERNAME) // not used but retained for consistency
             .password(DEFAULT_POSTGRES_PASSWORD)
             .maxWaitQueueSize(DEFAULT_MAX_WAIT_QUEUE_SIZE)
             .connectionTimeoutMs(DEFAULT_CONNECTION_TIMEOUT_MS)
-            .accessKey("dummy")
-            .secretKey("dummy")
+            .accessKey(DEFAULT_ACCESS_KEY)
+            .secretKey(DEFAULT_SECRET_KEY)
             .endpoint("http://localhost:" + port)
             .region(Region.US_EAST_1.toString())
             .tableConnectionMap(Map.of())
