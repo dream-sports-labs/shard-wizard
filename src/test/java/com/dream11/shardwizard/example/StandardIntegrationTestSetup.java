@@ -1,5 +1,7 @@
 package com.dream11.shardwizard.example;
 
+import static com.dream11.shardwizard.example.BaseShardTest.DEFAULT_ACCESS_KEY;
+import static com.dream11.shardwizard.example.BaseShardTest.DEFAULT_SECRET_KEY;
 import static com.dream11.shardwizard.example.utils.Constants.TABLE_NAME;
 import static com.dream11.shardwizard.example.utils.DynamoContainerUtils.defaultThroughput;
 
@@ -100,8 +102,8 @@ public class StandardIntegrationTestSetup {
     DynamoContainerUtils dynamoContainerUtils = new DynamoContainerUtils();
     DynamoContainerUtils.DynamoConfig config =
         DynamoContainerUtils.DynamoConfig.builder()
-            .accessKey("dummy")
-            .secretKey("dummy")
+            .accessKey(DEFAULT_ACCESS_KEY)
+            .secretKey(DEFAULT_SECRET_KEY)
             .endpoint(endpoint)
             .region(Region.US_EAST_1.toString())
             .build();
@@ -116,7 +118,8 @@ public class StandardIntegrationTestSetup {
               .endpointOverride(URI.create(shardEndpoint))
               .region(Region.US_EAST_1)
               .credentialsProvider(
-                  StaticCredentialsProvider.create(AwsBasicCredentials.create("dummy", "dummy")))
+                  StaticCredentialsProvider.create(
+                      AwsBasicCredentials.create(DEFAULT_ACCESS_KEY, DEFAULT_SECRET_KEY)))
               .build();
 
       // Create Orders Table in each shard

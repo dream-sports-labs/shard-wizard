@@ -23,6 +23,9 @@ import io.vertx.reactivex.sqlclient.Transaction;
 import io.vertx.reactivex.sqlclient.Tuple;
 import io.vertx.sqlclient.PoolOptions;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import lombok.extern.slf4j.Slf4j;
 
@@ -37,6 +40,8 @@ public class MysqlVertxClientImpl extends AbstractCircuitBreakerClient implement
   private final PoolOptions poolOptions;
   private long timerId;
   private final DatabaseEventRecorder eventRecorder = DatabaseEventRecorder.getInstance();
+
+  private ScheduledExecutorService executorService;
 
   public MysqlVertxClientImpl(
       Vertx vertx,
@@ -59,20 +64,12 @@ public class MysqlVertxClientImpl extends AbstractCircuitBreakerClient implement
                 promise -> {
                   createMasterSlavePool();
                   if (masterPool != null) {
-                    long interval =
-                        CHECK_READONLY_MODE_INTERVAL_SECONDS * 1000L; // convert to milliseconds
-                    timerId =
-                        vertx.setPeriodic(
-                            interval,
-                            id -> {
-                              try {
-                                checkIfMasterInReadOnlyMode();
-                              } catch (Exception e) {
-                                log.error("Error in periodic readonly check", e);
-                              }
-                            });
-                    // Run first check immediately
-                    vertx.runOnContext(v -> checkIfMasterInReadOnlyMode());
+                    executorService = Executors.newSingleThreadScheduledExecutor();
+                    executorService.scheduleAtFixedRate(
+                        this::checkIfMasterInReadOnlyMode,
+                        CHECK_READONLY_MODE_INTERVAL_SECONDS,
+                        CHECK_READONLY_MODE_INTERVAL_SECONDS,
+                        TimeUnit.SECONDS);
                   }
                   log.info("Successfully Connected to MySQL writer and reader clients");
                   eventRecorder.recordSuccess(DB_CONNECT);

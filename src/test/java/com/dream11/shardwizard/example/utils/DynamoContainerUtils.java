@@ -1,6 +1,5 @@
 package com.dream11.shardwizard.example.utils;
 
-import com.dream11.shardwizard.constant.DatabaseType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
@@ -112,19 +111,16 @@ public class DynamoContainerUtils {
       List<Map<String, Object>> shards = new ArrayList<>();
 
       for (JsonNode node : root) {
-        int shardId = node.get("shardId").asInt();
-        boolean isDefault = node.get("default").asBoolean();
-        boolean isActive = node.get("active").asBoolean();
+        int shardId = node.path("shardId").asInt();
+        boolean isDefault = node.path("default").asBoolean();
+        boolean isActive = node.path("active").asBoolean();
 
-        String databaseType = node.get("details").get("databaseType").asText();
-        int port = node.get("details").get("shardConnectionParams").get("port").asInt();
+        JsonNode details = node.path("details");
+        String databaseType = details.path("databaseType").asText();
 
-        Map<String, Object> shard =
-            DatabaseType.DYNAMO.name().equalsIgnoreCase(databaseType)
-                ? shard(shardId, isDefault, isActive, port, DatabaseType.DYNAMO.name())
-                : shard(shardId, isActive, isDefault, port);
-
-        shards.add(shard);
+        JsonNode params = details.path("shardConnectionParams");
+        // Build the shard map using all params present (works for DYNAMO and others)
+        shards.add(shard(shardId, isDefault, isActive, databaseType, params));
       }
       return shards;
     } catch (IOException e) {
@@ -132,48 +128,49 @@ public class DynamoContainerUtils {
     }
   }
 
-  private Map<String, Object> shard(int id, boolean def, boolean active, int port, String dbType) {
+  private Map<String, Object> shard(
+      int id, boolean isDefault, boolean isActive, String dbType, JsonNode params) {
+
+    // Common params (present in your sample JSON and harmless if absent)
+    int port = params.path("port").asInt(0);
+    String endpoint = params.path("endpoint").asText(null);
+    String region = params.path("region").asText(null);
+    String accessKey = params.path("accessKey").asText(null);
+    String secretKey = params.path("secretKey").asText(null);
+    String readerHost = params.path("readerHost").asText(null);
+    String writerHost = params.path("writerHost").asText(null);
+    int maxConnections = params.path("maxConnections").asInt(0);
+    int maxWaitQueueSize = params.path("maxWaitQueueSize").asInt(0);
+    int connectionTimeoutMs = params.path("connectionTimeoutMs").asInt(0);
+
+    Map<String, Object> connectionParams = new LinkedHashMap<>();
+    // Always include what we know; consumers can ignore nulls if not needed
+    connectionParams.put("port", port);
+    connectionParams.put("endpoint", endpoint);
+    connectionParams.put("region", region);
+    connectionParams.put("accessKey", accessKey);
+    connectionParams.put("secretKey", secretKey);
+    connectionParams.put("readerHost", readerHost);
+    connectionParams.put("writerHost", writerHost);
+    connectionParams.put("maxConnections", maxConnections);
+    connectionParams.put("maxWaitQueueSize", maxWaitQueueSize);
+    connectionParams.put("connectionTimeoutMs", connectionTimeoutMs);
+
     return Map.of(
         "shard_id",
         id,
         "is_active",
-        active,
+        isActive,
         "is_default",
-        def,
+        isDefault,
         "details",
         Map.of(
-            "databaseType",
-            dbType,
-            "shardConnectionParams",
-            Map.of(
-                "port",
-                port,
-                "endpoint",
-                "http://localhost:" + port,
-                "region",
-                "us-east-1",
-                "accessKey",
-                "dummy",
-                "secretKey",
-                "dummy",
-                "readerHost",
-                "localhost",
-                "writerHost",
-                "localhost",
-                "maxConnections",
-                5,
-                "maxWaitQueueSize",
-                50,
-                "connectionTimeoutMs",
-                500)),
+            "databaseType", dbType,
+            "shardConnectionParams", connectionParams),
         "created_at",
         Instant.now().toString(),
         "updated_at",
         Instant.now().toString());
-  }
-
-  private Map<String, Object> shard(int id, boolean active, boolean def, int port) {
-    return shard(id, def, active, port, DatabaseType.POSTGRES.name());
   }
 
   private static Map<String, AttributeValue> toItem(Map<String, Object> data) {
@@ -183,6 +180,10 @@ public class DynamoContainerUtils {
   }
 
   private static AttributeValue wrap(Object val) {
+    if (val == null) {
+      // represent null safely in Dynamo
+      return AttributeValue.builder().nul(true).build();
+    }
     if (val instanceof String) return s((String) val);
     if (val instanceof Boolean) return AttributeValue.builder().bool((Boolean) val).build();
     if (val instanceof Number) return n(val.toString());
@@ -193,7 +194,7 @@ public class DynamoContainerUtils {
     if (val instanceof Map) {
       Map<?, ?> rawMap = (Map<?, ?>) val;
       Map<String, AttributeValue> nested = new HashMap<>();
-      rawMap.forEach((k, v) -> nested.put(k.toString(), wrap(v)));
+      rawMap.forEach((k, v) -> nested.put(k.toString(), wrap(v))); // nulls handled above
       return AttributeValue.builder().m(nested).build();
     }
     throw new IllegalArgumentException("Unsupported type: " + val);

@@ -1,5 +1,8 @@
 package com.dream11.shardwizard.example.runs.shardmanager;
 
+import static com.dream11.shardwizard.example.BaseShardTest.DEFAULT_ACCESS_KEY;
+import static com.dream11.shardwizard.example.BaseShardTest.DEFAULT_SECRET_KEY;
+
 import com.dream11.shardwizard.constant.DatabaseType;
 import com.dream11.shardwizard.example.containers.DynamoContainer;
 import com.dream11.shardwizard.example.containers.LocalStackS3Container;
@@ -106,8 +109,8 @@ public class ShardManagerTestSetup {
     DynamoContainerUtils dynamoContainerUtils = new DynamoContainerUtils();
     DynamoContainerUtils.DynamoConfig config =
         DynamoContainerUtils.DynamoConfig.builder()
-            .accessKey("dummy")
-            .secretKey("dummy")
+            .accessKey(DEFAULT_ACCESS_KEY)
+            .secretKey(DEFAULT_SECRET_KEY)
             .endpoint(endpoint)
             .region(Region.US_EAST_1.toString())
             .build();

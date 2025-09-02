@@ -40,8 +40,8 @@ public abstract class BaseShardTest {
   protected static final String DEFAULT_MYSQL_USERNAME = "mysql";
   protected static final String DEFAULT_MYSQL_PASSWORD = "mysql";
   protected static final String DEFAULT_HOST = "localhost";
-  protected static final String DEFAULT_ACCESS_KEY = "dummy";
-  protected static final String DEFAULT_SECRET_KEY = "dummy";
+  public static final String DEFAULT_ACCESS_KEY = "dummy";
+  public static final String DEFAULT_SECRET_KEY = "dummy";
 
   // CircuitBreaker Configuration Constants
   protected static final boolean CIRCUIT_BREAKER_ENABLED = true;
@@ -53,7 +53,6 @@ public abstract class BaseShardTest {
   protected static final int CIRCUIT_BREAKER_MIN_CALLS = 100;
   protected static final int CIRCUIT_BREAKER_SLOW_CALL_RATE_THRESHOLD = 100;
   protected static final int CIRCUIT_BREAKER_SLOW_CALL_DURATION_MS = 10000;
-  protected static final boolean CIRCUIT_BREAKER_DISABLED = false;
 
   protected static void setupBase() throws Exception {
     // Set test environment
@@ -156,10 +155,6 @@ public abstract class BaseShardTest {
             .readerHost(DEFAULT_HOST)
             .password(DEFAULT_POSTGRES_PASSWORD)
             .maxWaitQueueSize(DEFAULT_MAX_WAIT_QUEUE_SIZE)
-            .accessKey(DEFAULT_ACCESS_KEY)
-            .secretKey(DEFAULT_SECRET_KEY)
-            .region(Region.US_EAST_1.toString())
-            .endpoint("http://localhost:" + port)
             .connectionTimeoutMs(DEFAULT_CONNECTION_TIMEOUT_MS)
             .circuitBreaker(createCircuitBreakerConfig())
             .build();
@@ -177,8 +172,8 @@ public abstract class BaseShardTest {
         ShardConnectionParameters.builder()
             .port(port)
             .maxConnections(DEFAULT_MAX_CONNECTIONS)
-            .writerHost(DEFAULT_HOST) // or Docker container hostname
-            .readerHost(DEFAULT_HOST)
+            .writerHost("http://localhost:" + port) // or Docker container hostname
+            .readerHost("http://localhost:" + port)
             .database(DEFAULT_POSTGRES_DATABASE) // DynamoDB table name or logical group
             .username(DEFAULT_POSTGRES_USERNAME) // not used but retained for consistency
             .password(DEFAULT_POSTGRES_PASSWORD)

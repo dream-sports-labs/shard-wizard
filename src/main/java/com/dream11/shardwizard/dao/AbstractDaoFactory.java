@@ -31,6 +31,8 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.NonNull;
@@ -49,6 +51,8 @@ public abstract class AbstractDaoFactory<T> implements DaoFactory<T> {
   private long timerId;
   protected ShardManagerConfig shardManagerConfig;
 
+  private final ScheduledExecutorService executorService;
+
   protected AbstractDaoFactory(Vertx vertx) {
     this.vertx = vertx;
     this.shardManagerConfig =
@@ -57,6 +61,7 @@ public abstract class AbstractDaoFactory<T> implements DaoFactory<T> {
     this.shardIdToDaoCache = new ConcurrentHashMap<>();
     this.entityIdToShardMappingCache = new ConcurrentHashMap<>();
     this.shardManagerClient = ShardManagerClient.create(vertx);
+    this.executorService = Executors.newSingleThreadScheduledExecutor();
     this.entityToShardRouterCache = new ConcurrentHashMap<>();
   }
 
@@ -278,20 +283,11 @@ public abstract class AbstractDaoFactory<T> implements DaoFactory<T> {
   }
 
   private void schedulePeriodicShardsRefresh(ShardManagerClient shardManagerClient) {
-    long initialDelay = 10L * 1000; // 10 seconds in milliseconds
-    long interval = shardManagerConfig.getShardsRefreshSeconds() * 1000L; // convert to milliseconds
-    timerId =
-        vertx.setPeriodic(
-            interval,
-            id -> {
-              try {
-                refreshCaches(shardManagerClient);
-              } catch (Exception e) {
-                log.error("Error in periodic shard refresh", e);
-              }
-            });
-    // Schedule first run after initial delay
-    vertx.setTimer(initialDelay, id -> refreshCaches(shardManagerClient));
+    executorService.scheduleAtFixedRate(
+        () -> refreshCaches(shardManagerClient),
+        10,
+        shardManagerConfig.getShardsRefreshSeconds(),
+        TimeUnit.SECONDS);
   }
 
   private void refreshCaches(ShardManagerClient shardManagerClient) {
