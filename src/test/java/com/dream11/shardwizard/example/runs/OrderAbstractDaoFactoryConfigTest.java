@@ -3,7 +3,7 @@ package com.dream11.shardwizard.example.runs;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import com.dream11.shardwizard.example.BaseShardTest;
+import com.dream11.shardwizard.example.ShardTestSupport;
 import com.dream11.shardwizard.example.dto.CreateOrderResponseDTO;
 import com.dream11.shardwizard.example.dto.OrderDto;
 import com.dream11.shardwizard.model.ShardDetails;
@@ -17,7 +17,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 @Slf4j
-public class OrderAbstractDaoFactoryConfigTest extends BaseShardTest {
+public class OrderAbstractDaoFactoryConfigTest extends ShardTestSupport {
 
   private static final int CONFIGURED_ROUND = 1012;
   private static final int INVALID_ROUND = 1011;

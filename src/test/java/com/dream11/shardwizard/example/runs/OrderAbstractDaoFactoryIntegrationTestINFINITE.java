@@ -2,7 +2,7 @@ package com.dream11.shardwizard.example.runs;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.dream11.shardwizard.example.BaseShardTest;
+import com.dream11.shardwizard.example.ShardTestSupport;
 import com.dream11.shardwizard.example.dto.CreateOrderResponseDTO;
 import com.dream11.shardwizard.example.dto.OrderDto;
 import io.reactivex.Single;
@@ -13,7 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeAll;
 
 @Slf4j
-public class OrderAbstractDaoFactoryIntegrationTestINFINITE extends BaseShardTest {
+public class OrderAbstractDaoFactoryIntegrationTestINFINITE extends ShardTestSupport {
 
   private static final int BATCH_DELAY_MS = 1000;
   private static final int PROGRESS_LOG_INTERVAL = 100;

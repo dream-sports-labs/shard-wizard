@@ -2,7 +2,7 @@ package com.dream11.shardwizard.example.runs.client.dynamo;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.dream11.shardwizard.example.BaseShardTest;
+import com.dream11.shardwizard.example.ShardTestSupport;
 import com.dream11.shardwizard.example.dto.CreateOrderResponseDTO;
 import com.dream11.shardwizard.example.dto.OrderDto;
 import io.reactivex.Single;
@@ -17,7 +17,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 @Slf4j
-public class OrderDaoFactoryIntegrationTestINFINITE extends BaseShardTest {
+public class OrderDaoFactoryIntegrationTestINFINITE extends ShardTestSupport {
 
   private final AtomicLong totalOrdersCreated = new AtomicLong(0);
   private final AtomicLong totalErrors = new AtomicLong(0);

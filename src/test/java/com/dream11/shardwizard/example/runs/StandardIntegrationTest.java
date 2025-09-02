@@ -2,7 +2,7 @@ package com.dream11.shardwizard.example.runs;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.dream11.shardwizard.example.BaseShardTest;
+import com.dream11.shardwizard.example.ShardTestSupport;
 import com.dream11.shardwizard.example.dto.CreateOrderResponseDTO;
 import com.dream11.shardwizard.example.dto.OrderDto;
 import com.dream11.shardwizard.exception.EntityNotMappedToShardException;
@@ -19,7 +19,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 @Slf4j
-public class StandardIntegrationTest extends BaseShardTest { // TODO - TO CHECK
+public class StandardIntegrationTest extends ShardTestSupport { // TODO - TO CHECK
   @BeforeAll
   public static void setUp() throws Exception {
     log.info("Starting test setup");

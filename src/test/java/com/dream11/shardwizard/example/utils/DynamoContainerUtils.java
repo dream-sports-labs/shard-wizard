@@ -1,7 +1,7 @@
 package com.dream11.shardwizard.example.utils;
 
-import static com.dream11.shardwizard.example.BaseShardTest.DEFAULT_ACCESS_KEY;
-import static com.dream11.shardwizard.example.BaseShardTest.DEFAULT_SECRET_KEY;
+import static com.dream11.shardwizard.example.ShardTestSupport.DEFAULT_ACCESS_KEY;
+import static com.dream11.shardwizard.example.ShardTestSupport.DEFAULT_SECRET_KEY;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;

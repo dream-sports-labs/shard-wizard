@@ -1,4 +1,4 @@
-package com.dream11.shardwizard.circuitbreaker.manager;
+package com.dream11.shardwizard.example.runs.circuitbreaker.manager;
 
 import static com.dream11.shardwizard.constant.Constants.SHARD_MANAGER_CONFIG_FOLDER;
 import static org.junit.Assert.assertEquals;
@@ -6,6 +6,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dream11.shardwizard.circuitbreaker.exception.CircuitBreakerOpenException;
+import com.dream11.shardwizard.circuitbreaker.manager.CircuitBreakerUtils;
 import com.dream11.shardwizard.config.ShardManagerConfig;
 import com.dream11.shardwizard.utils.ConfigUtils;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;

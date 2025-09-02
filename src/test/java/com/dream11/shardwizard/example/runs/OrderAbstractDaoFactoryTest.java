@@ -3,7 +3,7 @@ package com.dream11.shardwizard.example.runs;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.dream11.shardwizard.example.BaseShardTest;
+import com.dream11.shardwizard.example.ShardTestSupport;
 import com.dream11.shardwizard.example.order.OrderDao;
 import com.dream11.shardwizard.example.order.OrderDaoFactory;
 import com.dream11.shardwizard.example.order.impl.PostgresOrderDaoImpl;
@@ -20,7 +20,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 @Slf4j
-public class OrderAbstractDaoFactoryTest extends BaseShardTest {
+public class OrderAbstractDaoFactoryTest extends ShardTestSupport {
 
   private static final int MYSQL_SHARD_ID = 4;
   private static final int POSTGRES_SHARD_ID = 3;

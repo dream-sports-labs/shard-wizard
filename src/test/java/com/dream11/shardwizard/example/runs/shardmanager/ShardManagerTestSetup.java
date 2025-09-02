@@ -1,7 +1,7 @@
 package com.dream11.shardwizard.example.runs.shardmanager;
 
-import static com.dream11.shardwizard.example.BaseShardTest.DEFAULT_ACCESS_KEY;
-import static com.dream11.shardwizard.example.BaseShardTest.DEFAULT_SECRET_KEY;
+import static com.dream11.shardwizard.example.ShardTestSupport.DEFAULT_ACCESS_KEY;
+import static com.dream11.shardwizard.example.ShardTestSupport.DEFAULT_SECRET_KEY;
 
 import com.dream11.shardwizard.constant.DatabaseType;
 import com.dream11.shardwizard.example.containers.DynamoContainer;

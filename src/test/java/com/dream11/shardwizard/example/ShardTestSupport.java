@@ -26,7 +26,7 @@ import org.apache.commons.lang3.RandomUtils;
 import software.amazon.awssdk.regions.Region;
 
 @Slf4j
-public abstract class BaseShardTest {
+public abstract class ShardTestSupport {
   protected static Vertx vertx;
   protected static OrderDaoFactory orderDaoFactory;
 

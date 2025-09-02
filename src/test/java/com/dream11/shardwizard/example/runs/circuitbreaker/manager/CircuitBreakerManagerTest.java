@@ -1,7 +1,8 @@
-package com.dream11.shardwizard.circuitbreaker.manager;
+package com.dream11.shardwizard.example.runs.circuitbreaker.manager;
 
 import static org.junit.Assert.*;
 
+import com.dream11.shardwizard.circuitbreaker.manager.CircuitBreakerManager;
 import com.dream11.shardwizard.model.CircuitBreakerConfigDTO;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import java.net.ConnectException;
