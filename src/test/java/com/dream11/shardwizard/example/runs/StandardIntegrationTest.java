@@ -19,7 +19,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 @Slf4j
-public class StandardIntegrationTest extends ShardTestSupport { // TODO - TO CHECK
+public class StandardIntegrationTest
+    extends ShardTestSupport { // TODO - TO CHECK - THIS IS WRITTEN ACCORDING TO POSTGRES
   @BeforeAll
   public static void setUp() throws Exception {
     log.info("Starting test setup");

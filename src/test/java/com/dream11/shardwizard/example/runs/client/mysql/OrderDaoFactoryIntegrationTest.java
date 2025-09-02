@@ -21,6 +21,12 @@ import org.junit.jupiter.api.Test;
 
 @Slf4j
 public class OrderDaoFactoryIntegrationTest extends ShardTestSupport {
+
+  private static final int CONFIGURED_ROUND = 1023;
+  private static final int INVALID_ROUND = 1011;
+  private static final int USER_ID_1 = 60009005;
+  private static final int USER_ID_2 = 60009006;
+
   @BeforeAll
   public static void setUp() throws Exception {
     log.info("Starting test setup");
@@ -366,5 +372,137 @@ public class OrderDaoFactoryIntegrationTest extends ShardTestSupport {
               latch.countDown();
             },
             e -> handleTestError("Error in test", e, latch, error));
+  }
+
+  @Test
+  void shouldReturnCorrectShardDetailsForValidRound() throws Exception {
+    CountDownLatch latch = new CountDownLatch(1);
+    AtomicReference<Throwable> error = new AtomicReference<>();
+
+    vertx.runOnContext(
+        v -> {
+          try {
+            runShardDetailsTest(CONFIGURED_ROUND, latch, error);
+          } catch (Exception e) {
+            handleTestError("Error in shard details test", e, latch, error);
+          }
+        });
+
+    awaitAndHandleError(latch, error, "Test failed");
+  }
+
+  @Test
+  void shouldThrowExceptionForInvalidRound() throws Exception {
+    CountDownLatch latch = new CountDownLatch(1);
+    AtomicReference<Throwable> error = new AtomicReference<>();
+
+    vertx.runOnContext(
+        v -> {
+          try {
+            runInvalidRoundTest(INVALID_ROUND, latch, error);
+          } catch (Exception e) {
+            handleTestError("Error in invalid round test", e, latch, error);
+          }
+        });
+
+    awaitAndHandleError(latch, error, "Test failed");
+  }
+
+  @Test
+  void shouldSaveAndRetrieveOrdersFromCorrectShards() throws Exception {
+    CountDownLatch latch = new CountDownLatch(1);
+    AtomicReference<Throwable> error = new AtomicReference<>();
+
+    vertx.runOnContext(
+        v -> {
+          try {
+            runOrderCreationAndVerificationTest(
+                CONFIGURED_ROUND, USER_ID_1, USER_ID_2, latch, error);
+          } catch (Exception e) {
+            handleTestError("Error in order creation test", e, latch, error);
+          }
+        });
+
+    awaitAndHandleError(latch, error, "Test failed");
+  }
+
+  private void runInvalidRoundTest(
+      int invalidRound, CountDownLatch latch, AtomicReference<Throwable> error) {
+    orderDaoFactory
+        .rxGetEntityShardDetails(Integer.toString(invalidRound))
+        .subscribe(
+            shardDetails -> {
+              error.set(new Exception("Expected exception but got success"));
+              latch.countDown();
+            },
+            e -> {
+              log.info(
+                  "Expected exception occurred for invalid round {}: {}",
+                  invalidRound,
+                  e.getMessage());
+              latch.countDown();
+            });
+  }
+
+  private Single<OrderDto> verifyFirstOrder(
+      CreateOrderResponseDTO response, int roundId, int userId) {
+    assertNotNull(response, "Order 1 creation response should not be null");
+    String orderId = response.getOrderId();
+    assertNotNull(orderId, "Order 1 ID should not be null");
+    log.info("Created first order with ID: {}", orderId);
+
+    String shardId = extractShardId(orderId);
+    log.info("Extracted shard ID: {} from order ID: {}", shardId, orderId);
+
+    return orderDaoFactory
+        .rxGetOrCreateEntityShardDao(shardId, userId)
+        .doOnSuccess(dao -> log.info("Retrieved DAO instance for shard ID: {}", shardId))
+        .doOnError(e -> log.error("Error getting DAO instance for shard ID: {}", shardId, e))
+        .flatMap(
+            dao -> {
+              assertNotNull(dao, "DAO instance for order 1 should not be null");
+              log.info("Getting order details for ID: {}", orderId);
+              return dao.get(orderId);
+            })
+        .doOnSuccess(orderDTO -> verifyOrder(orderDTO, orderId, userId));
+  }
+
+  private Single<OrderDto> createAndVerifySecondOrder(int roundId, int userId) {
+    OrderDto order = createSampleOrder(userId, roundId);
+    log.info("Creating second order for userId: {}, round: {}", userId, roundId);
+
+    return saveOrder(order, roundId, userId)
+        .flatMap(response -> verifySecondOrder(response, roundId, userId));
+  }
+
+  private Single<OrderDto> verifySecondOrder(
+      CreateOrderResponseDTO response, int roundId, int userId) {
+    assertNotNull(response, "Order 2 creation response should not be null");
+    String orderId = response.getOrderId();
+    assertNotNull(orderId, "Order 2 ID should not be null");
+    log.info("Created second order with ID: {}", orderId);
+
+    String shardId = extractShardId(orderId);
+    log.info("Extracted shard ID: {} from order ID: {}", shardId, orderId);
+
+    return orderDaoFactory
+        .rxGetOrCreateEntityShardDao(shardId, userId)
+        .doOnSuccess(dao -> log.info("Retrieved DAO instance for shard ID: {}", shardId))
+        .doOnError(e -> log.error("Error getting DAO instance for shard ID: {}", shardId, e))
+        .flatMap(
+            dao -> {
+              assertNotNull(dao, "DAO instance for order 2 should not be null");
+              log.info("Getting order details for ID: {}", orderId);
+              return dao.get(orderId);
+            })
+        .doOnSuccess(orderDTO -> verifyOrder(orderDTO, orderId, userId));
+  }
+
+  private String extractShardId(String orderId) {
+    String[] parts = orderId.split("-");
+    if (parts.length != 3) {
+      throw new IllegalArgumentException("Invalid order ID format: " + orderId);
+    }
+    return parts[2];
   }
 }
