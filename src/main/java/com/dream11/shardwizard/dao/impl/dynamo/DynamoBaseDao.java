@@ -28,14 +28,7 @@ public abstract class DynamoBaseDao extends BaseDaoAbstract {
     String region = connectionParams.getRegion();
 
     log.info("Initializing DynamoDB client for region: {} and endpoint {} ", region, endpoint);
-    this.dynamoVertxClient =
-        new DynamoVertxClientImpl(
-            vertx,
-            endpoint,
-            region,
-            connectionParams.getAccessKey(),
-            connectionParams.getSecretKey(),
-            shardDetails);
+    this.dynamoVertxClient = new DynamoVertxClientImpl(vertx, connectionParams, shardDetails);
   }
 
   @Override

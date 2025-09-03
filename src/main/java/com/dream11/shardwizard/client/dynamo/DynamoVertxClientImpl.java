@@ -1,6 +1,7 @@
 package com.dream11.shardwizard.client.dynamo;
 
 import com.dream11.shardwizard.circuitbreaker.client.AbstractCircuitBreakerClient;
+import com.dream11.shardwizard.model.ShardConnectionParameters;
 import com.dream11.shardwizard.model.ShardDetails;
 import io.reactivex.Completable;
 import io.reactivex.Single;
@@ -38,25 +39,14 @@ public class DynamoVertxClientImpl extends AbstractCircuitBreakerClient
     implements DynamoVertxClient {
 
   private final Vertx vertx;
-  private final String endpoint;
-  private final String region;
-  private final String accessKey;
-  private final String secretKey;
+  private final ShardConnectionParameters connectionParams;
   private DynamoDbAsyncClient dynamoClient;
 
   public DynamoVertxClientImpl(
-      Vertx vertx,
-      String endpoint,
-      String region,
-      String accessKey,
-      String secretKey,
-      ShardDetails shardDetails) {
+      Vertx vertx, ShardConnectionParameters connectionParams, ShardDetails shardDetails) {
     super(shardDetails);
     this.vertx = vertx;
-    this.endpoint = endpoint;
-    this.region = region;
-    this.accessKey = accessKey;
-    this.secretKey = secretKey;
+    this.connectionParams = connectionParams;
   }
 
   @Override
@@ -66,7 +56,7 @@ public class DynamoVertxClientImpl extends AbstractCircuitBreakerClient
             .rxExecuteBlocking(
                 promise -> {
                   try {
-                    dynamoClient = buildDynamoDbAsyncClient(region, endpoint, accessKey, secretKey);
+                    dynamoClient = buildDynamoDbAsyncClient(connectionParams);
                     log.info("✅ Successfully connected to DynamoDB");
                     promise.complete();
                   } catch (Exception e) {
@@ -77,29 +67,35 @@ public class DynamoVertxClientImpl extends AbstractCircuitBreakerClient
             .ignoreElement());
   }
 
-  private DynamoDbAsyncClient buildDynamoDbAsyncClient(
-      String region, String endpoint, String accessKey, String secretKey) {
+  private DynamoDbAsyncClient buildDynamoDbAsyncClient(ShardConnectionParameters connectionParams) {
 
-    // TODO - To move it to configuration.
+    // Use configuration values (defaults are now handled by @Builder.Default in POJO)
     DynamoDbAsyncClientBuilder builder =
         DynamoDbAsyncClient.builder()
-            .region(Region.of(region))
+            .region(Region.of(connectionParams.getRegion()))
             .httpClientBuilder(
                 AwsCrtAsyncHttpClient.builder()
-                    .connectionTimeout(Duration.ofMillis(1000))
-                    .connectionMaxIdleTime(Duration.ofMillis(15000))
-                    .maxConcurrency(5000)
+                    .connectionTimeout(
+                        Duration.ofMillis(connectionParams.getDynamoConnectionTimeoutMs()))
+                    .connectionMaxIdleTime(
+                        Duration.ofMillis(connectionParams.getDynamoConnectionMaxIdleTimeMs()))
+                    .maxConcurrency(connectionParams.getDynamoMaxConcurrency())
                     .tcpKeepAliveConfiguration(
                         TcpKeepAliveConfiguration.builder()
-                            .keepAliveInterval(Duration.ofMillis(150))
-                            .keepAliveTimeout(Duration.ofMillis(500))
+                            .keepAliveInterval(
+                                Duration.ofMillis(connectionParams.getDynamoKeepAliveIntervalMs()))
+                            .keepAliveTimeout(
+                                Duration.ofMillis(connectionParams.getDynamoKeepAliveTimeoutMs()))
                             .build()));
 
+    String accessKey = connectionParams.getAccessKey();
+    String secretKey = connectionParams.getSecretKey();
     if (accessKey != null && !accessKey.isBlank() && secretKey != null && !secretKey.isBlank()) {
       builder.credentialsProvider(
           StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKey, secretKey)));
     }
 
+    String endpoint = connectionParams.getEndpoint();
     if (endpoint != null && !endpoint.trim().isEmpty()) {
       builder.endpointOverride(URI.create(endpoint));
     }

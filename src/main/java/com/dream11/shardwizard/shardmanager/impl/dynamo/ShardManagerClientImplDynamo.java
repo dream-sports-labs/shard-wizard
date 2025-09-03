@@ -1,5 +1,11 @@
 package com.dream11.shardwizard.shardmanager.impl.dynamo;
 
+import static com.dream11.shardwizard.config.DynamoConfig.DEFAULT_CONNECTION_MAX_IDLE_TIME_MS;
+import static com.dream11.shardwizard.config.DynamoConfig.DEFAULT_CONNECTION_TIMEOUT_MS;
+import static com.dream11.shardwizard.config.DynamoConfig.DEFAULT_KEEP_ALIVE_INTERVAL_MS;
+import static com.dream11.shardwizard.config.DynamoConfig.DEFAULT_KEEP_ALIVE_TIMEOUT_MS;
+import static com.dream11.shardwizard.config.DynamoConfig.DEFAULT_MAX_CONCURRENCY;
+
 import com.dream11.shardwizard.config.DynamoConfig;
 import com.dream11.shardwizard.constant.DatabaseType;
 import com.dream11.shardwizard.exception.DefaultShardNotFoundException;
@@ -74,6 +80,13 @@ public class ShardManagerClientImplDynamo implements ShardManagerClient {
   public static final String ENDPOINT = "endpoint";
   public static final String REGION = "region";
   public static final String SHARD_CONNECTION_PARAMS = "shardConnectionParams";
+
+  // DynamoDB HTTP client configuration parameter keys
+  public static final String DYNAMO_CONNECTION_TIMEOUT_MS = "dynamoConnectionTimeoutMs";
+  public static final String DYNAMO_CONNECTION_MAX_IDLE_TIME_MS = "dynamoConnectionMaxIdleTimeMs";
+  public static final String DYNAMO_MAX_CONCURRENCY = "dynamoMaxConcurrency";
+  public static final String DYNAMO_KEEP_ALIVE_INTERVAL_MS = "dynamoKeepAliveIntervalMs";
+  public static final String DYNAMO_KEEP_ALIVE_TIMEOUT_MS = "dynamoKeepAliveTimeoutMs";
 
   public ShardManagerClientImplDynamo(DynamoConfig dynamoConfig) {
 
@@ -309,8 +322,8 @@ public class ShardManagerClientImplDynamo implements ShardManagerClient {
                         item -> {
                           long shardId = Long.parseLong(item.get(SHARD_ID).n());
                           Map<String, AttributeValue> detailsMap = item.get(DETAILS).m();
-                          ShardConfig config =
-                              parseShardConfig(detailsMap); // You should already have this
+                          ShardConfig config = parseShardConfig(detailsMap); // You should already
+                          // have this
                           return new ShardDetails(shardId, config);
                         })
                     .collect(Collectors.toList()));
@@ -450,8 +463,28 @@ public class ShardManagerClientImplDynamo implements ShardManagerClient {
                 shardConnMap.getOrDefault(SECRET_KEY, AttributeValue.builder().s("").build()).s())
             .endpoint(
                 shardConnMap.getOrDefault(ENDPOINT, AttributeValue.builder().s(null).build()).s())
-            .region(
-                shardConnMap.getOrDefault(REGION, AttributeValue.builder().s(null).build()).s());
+            .region(shardConnMap.getOrDefault(REGION, AttributeValue.builder().s(null).build()).s())
+            // DynamoDB HTTP client configuration (with defaults if not specified)
+            .dynamoConnectionTimeoutMs(
+                shardConnMap.containsKey(DYNAMO_CONNECTION_TIMEOUT_MS)
+                    ? Integer.parseInt(shardConnMap.get(DYNAMO_CONNECTION_TIMEOUT_MS).n())
+                    : DEFAULT_CONNECTION_TIMEOUT_MS)
+            .dynamoConnectionMaxIdleTimeMs(
+                shardConnMap.containsKey(DYNAMO_CONNECTION_MAX_IDLE_TIME_MS)
+                    ? Integer.parseInt(shardConnMap.get(DYNAMO_CONNECTION_MAX_IDLE_TIME_MS).n())
+                    : DEFAULT_CONNECTION_MAX_IDLE_TIME_MS)
+            .dynamoMaxConcurrency(
+                shardConnMap.containsKey(DYNAMO_MAX_CONCURRENCY)
+                    ? Integer.parseInt(shardConnMap.get(DYNAMO_MAX_CONCURRENCY).n())
+                    : DEFAULT_MAX_CONCURRENCY)
+            .dynamoKeepAliveIntervalMs(
+                shardConnMap.containsKey(DYNAMO_KEEP_ALIVE_INTERVAL_MS)
+                    ? Integer.parseInt(shardConnMap.get(DYNAMO_KEEP_ALIVE_INTERVAL_MS).n())
+                    : DEFAULT_KEEP_ALIVE_INTERVAL_MS)
+            .dynamoKeepAliveTimeoutMs(
+                shardConnMap.containsKey(DYNAMO_KEEP_ALIVE_TIMEOUT_MS)
+                    ? Integer.parseInt(shardConnMap.get(DYNAMO_KEEP_ALIVE_TIMEOUT_MS).n())
+                    : DEFAULT_KEEP_ALIVE_TIMEOUT_MS);
 
     return ShardConfig.builder()
         .databaseType(DatabaseType.valueOf(databaseTypeStr))
@@ -577,6 +610,39 @@ public class ShardManagerClientImplDynamo implements ShardManagerClient {
     }
     if (params.getSecretKey() != null) {
       shardConnectionMap.put(SECRET_KEY, AttributeValue.builder().s(params.getSecretKey()).build());
+    }
+
+    // Add DynamoDB HTTP client configuration if present
+    if (params.getDynamoConnectionTimeoutMs() != null) {
+      shardConnectionMap.put(
+          DYNAMO_CONNECTION_TIMEOUT_MS,
+          AttributeValue.builder()
+              .n(String.valueOf(params.getDynamoConnectionTimeoutMs()))
+              .build());
+    }
+    if (params.getDynamoConnectionMaxIdleTimeMs() != null) {
+      shardConnectionMap.put(
+          DYNAMO_CONNECTION_MAX_IDLE_TIME_MS,
+          AttributeValue.builder()
+              .n(String.valueOf(params.getDynamoConnectionMaxIdleTimeMs()))
+              .build());
+    }
+    if (params.getDynamoMaxConcurrency() != null) {
+      shardConnectionMap.put(
+          DYNAMO_MAX_CONCURRENCY,
+          AttributeValue.builder().n(String.valueOf(params.getDynamoMaxConcurrency())).build());
+    }
+    if (params.getDynamoKeepAliveIntervalMs() != null) {
+      shardConnectionMap.put(
+          DYNAMO_KEEP_ALIVE_INTERVAL_MS,
+          AttributeValue.builder()
+              .n(String.valueOf(params.getDynamoKeepAliveIntervalMs()))
+              .build());
+    }
+    if (params.getDynamoKeepAliveTimeoutMs() != null) {
+      shardConnectionMap.put(
+          DYNAMO_KEEP_ALIVE_TIMEOUT_MS,
+          AttributeValue.builder().n(String.valueOf(params.getDynamoKeepAliveTimeoutMs())).build());
     }
 
     return shardConnectionMap;
