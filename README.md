@@ -15,7 +15,7 @@ ShardWizard is designed to solve complex database sharding challenges in high-sc
 ### Key Features
 
 - **🔄 Dynamic Shard Management**: Add or remove shards without application downtime
-- **🎯 Intelligent Routing**: Consistent hashing and custom routing strategies
+- **🎯 Intelligent Routing**: Configurable modulo and consistent hashing strategies
 - **🛡️ Fault Tolerance**: Built-in circuit breakers and automatic failover
 - **📊 Multi-Database Support**: PostgreSQL, MySQL, DynamoDB, and S3 backends
 - **📈 Observability**: Comprehensive metrics, tracing, and health monitoring
@@ -97,6 +97,7 @@ Create database-specific configuration files:
 ```hocon
 sourceType = "POSTGRES"
 shardsRefreshSeconds = 60
+routerType = "MODULO"  # Options: MODULO, CONSISTENT
 serviceName = "my-service"
 
 sources = {
@@ -130,6 +131,7 @@ sources = {
 ```hocon
 sourceType = "S3"
 shardsRefreshSeconds = 60
+routerType = "CONSISTENT"  # Options: MODULO, CONSISTENT
 serviceName = "my-service"
 
 sources = {
@@ -168,6 +170,7 @@ Create a fallback configuration at `src/main/resources/config/shard-manager/defa
 ```hocon
 sourceType = "POSTGRES"  # Default fallback type
 shardsRefreshSeconds = 60
+routerType = "MODULO"  # Default router type
 serviceName = "my-service"
 
 # Contains configurations for ALL supported database types
@@ -217,6 +220,20 @@ sources = {
 1. **Database-specific config**: `postgres.conf`, `s3.conf`, `mysql.conf`, `dynamo.conf`
 2. **Fallback**: `default.conf`
 3. **System property**: `-Dshard.source.type=POSTGRES`
+
+#### Configuration Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `sourceType` | String | Required | Database type for shard master storage (`POSTGRES`, `MYSQL`, `S3`, `DYNAMO`) |
+| `routerType` | String | `MODULO` | Routing strategy (`MODULO`, `CONSISTENT`) |
+| `shardsRefreshSeconds` | Integer | `60` | Frequency of shard configuration refresh |
+| `serviceName` | String | Required | Service name for metrics and logging |
+| `metricsAgent` | String | `noop` | Observability provider (`datadog`, `newrelic`, `noop`) |
+
+**Router Type Details:**
+- **`MODULO`**: Perfect distribution for numeric route keys, ideal for high-performance scenarios
+- **`CONSISTENT`**: Consistent hashing for minimal data movement during scaling, ideal for dynamic environments
 
 ## 🗄️ Shard Master Setup
 
@@ -650,21 +667,99 @@ ShardManagerClient shardManager = ShardManagerClient.create(vertx, config);
 ShardManagerClient shardManager = ShardManagerClient.create(vertx);
 ```
 
+### Routing Strategies
+
+ShardWizard provides two built-in routing strategies that can be configured per deployment:
+
+#### Modulo Routing (`MODULO`)
+
+```hocon
+routerType = "MODULO"
+```
+
+**Characteristics:**
+- Uses modulo operation: `shardId = routeKey % totalShards`
+- **Perfect distribution** for sequential numeric keys
+- **Fast performance** - O(1) routing decisions
+- **Best for:** Numeric IDs, sequential data, high-performance requirements
+
+**Use Cases:**
+- Auto-incrementing primary keys
+- User IDs, order IDs, transaction IDs
+- Applications requiring perfect load distribution
+
+#### Consistent Hashing (`CONSISTENT`)
+
+```hocon
+routerType = "CONSISTENT"
+```
+
+**Characteristics:**
+- Uses consistent hashing with virtual nodes
+- **Resilient to shard changes** - minimal data movement when adding/removing shards
+- **Good distribution** for string-based keys
+- **Best for:** Dynamic scaling, string-based route keys, hash-based workloads
+
+**Use Cases:**
+- Username-based routing
+- UUID-based keys
+- Applications requiring frequent scaling operations
+- Multi-tenant systems with tenant-based routing
+
+#### Comparison
+
+| Feature | MODULO | CONSISTENT |
+|---------|---------|------------|
+| **Distribution Quality** | Perfect for numeric keys | Good for all key types |
+| **Performance** | Fastest (O(1)) | Fast (O(log n)) |
+| **Scaling Impact** | High - requires data migration | Low - minimal data movement |
+| **Memory Usage** | Minimal | Higher (virtual nodes) |
+| **Best Route Keys** | Numeric IDs | Any string format |
+
 ### Custom Routing
 
+For advanced use cases, you can implement custom routing logic by extending the `AbstractDaoFactory`:
+
 ```java
-public class CustomRouter implements ShardRouter {
+public class CustomOrderDaoFactory extends AbstractDaoFactory<OrderDao> {
+    
     @Override
-    public long getRoutedShardId(String routeKey) {
-        // Your custom routing logic
-        return routeKey.hashCode() % shardIds.size();
+    protected ShardRouter getShardRouter() {
+        // Option 1: Use configuration-driven routing (recommended)
+        return ShardRouterFactory.createRouter(shardManagerConfig.getRouterType());
+        
+        // Option 2: Custom implementation
+        return new ShardRouter() {
+            @Override
+            public void initialize(List<Long> shardIds) {
+                this.shardIds = shardIds;
+            }
+            
+            @Override
+            public long getRoutedShardId(String routeKey) {
+                // Your custom routing logic
+                return customRoutingLogic(routeKey);
+            }
+        };
     }
 }
+```
 
-// Use in DAO factory
-@Override
-protected ShardRouter getShardRouter() {
-    return new CustomRouter();
+#### Configuration Override Example
+
+```java
+// Override router type programmatically if needed
+public class CustomOrderDaoFactory extends OrderDaoFactory {
+    public CustomOrderDaoFactory(Vertx vertx, DatabaseType sourceType) {
+        super(vertx, sourceType);
+        // Configuration is already loaded via parent constructor
+    }
+    
+    @Override
+    protected ShardRouter getShardRouter() {
+        // Force consistent routing regardless of configuration
+        return ShardRouterFactory.createRouter(RouterType.CONSISTENT);
+    }
 }
 ```
 

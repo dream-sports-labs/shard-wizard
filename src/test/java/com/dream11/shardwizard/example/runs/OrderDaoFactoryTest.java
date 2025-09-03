@@ -4,13 +4,15 @@ import static com.dream11.shardwizard.example.StandardIntegrationTestSetup.setup
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.dream11.shardwizard.constant.RouterType;
 import com.dream11.shardwizard.example.MainModule;
 import com.dream11.shardwizard.example.ShardTestSupport;
 import com.dream11.shardwizard.example.order.OrderDao;
 import com.dream11.shardwizard.example.order.OrderDaoFactory;
 import com.dream11.shardwizard.example.order.impl.PostgresOrderDaoImpl;
 import com.dream11.shardwizard.example.utils.AppContext;
-import com.dream11.shardwizard.router.impl.ConsistentHashingRouter;
+import com.dream11.shardwizard.router.ShardRouter;
+import com.dream11.shardwizard.router.ShardRouterFactory;
 import io.vertx.reactivex.core.Vertx;
 import java.util.HashMap;
 import java.util.List;
@@ -134,11 +136,30 @@ public class OrderDaoFactoryTest extends ShardTestSupport {
 
   @Test
   /**
+   * Test that verifies the modulo router distributes requests evenly across shards Should
+   * distribute requests evenly across 3 shards with a small tolerance for imbalance
+   */
+  void shouldDistributeRequestsEvenlyAcrossThreeShardsWithModuloRouter() {
+    runDistributionTest(RouterType.MODULO, List.of(1L, 2L, 3L), 1_000_000, 0.05);
+  }
+
+  @Test
+  /**
+   * Test that verifies the modulo router distributes requests evenly across many shards Should
+   * distribute requests evenly across 11 shards with a reasonable tolerance for imbalance
+   */
+  void shouldDistributeRequestsEvenlyAcrossManyShardsWithModuloRouter() {
+    runDistributionTest(
+        RouterType.MODULO, List.of(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L), 1_000_000, 0.05);
+  }
+
+  @Test
+  /**
    * Test that verifies the consistent hashing router distributes requests evenly across shards
    * Should distribute requests evenly across 3 shards with a small tolerance for imbalance
    */
-  void shouldDistributeRequestsEvenlyAcrossThreeShards() {
-    runDistributionTest(List.of(1L, 2L, 3L), 1_000_000, 0.05);
+  void shouldDistributeRequestsEvenlyAcrossThreeShardsWithConsistentRouter() {
+    runDistributionTest(RouterType.CONSISTENT, List.of(1L, 2L, 3L), 1_000_000, 0.05);
   }
 
   @Test
@@ -146,8 +167,12 @@ public class OrderDaoFactoryTest extends ShardTestSupport {
    * Test that verifies the consistent hashing router distributes requests evenly across many shards
    * Should distribute requests evenly across 11 shards with a reasonable tolerance for imbalance
    */
-  void shouldDistributeRequestsEvenlyAcrossManyShards() {
-    runDistributionTest(List.of(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L), 1_000_000, 0.05);
+  void shouldDistributeRequestsEvenlyAcrossManyShardsWithConsistentRouter() {
+    runDistributionTest(
+        RouterType.CONSISTENT,
+        List.of(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L),
+        1_000_000,
+        0.05);
   }
 
   @Test
@@ -346,8 +371,16 @@ public class OrderDaoFactoryTest extends ShardTestSupport {
   }
 
   private void runDistributionTest(
-      List<Long> activeShardIds, int totalRequests, double tolerancePercentage) {
-    ConsistentHashingRouter shardRouter = new ConsistentHashingRouter();
+      RouterType routerType,
+      List<Long> activeShardIds,
+      int totalRequests,
+      double tolerancePercentage) {
+    log.info(
+        "Testing distribution for router type: {} with {} shards",
+        routerType,
+        activeShardIds.size());
+
+    ShardRouter shardRouter = ShardRouterFactory.createRouter(routerType);
     shardRouter.initialize(activeShardIds);
 
     Map<Long, Integer> shardCounters = new HashMap<>();
@@ -357,7 +390,7 @@ public class OrderDaoFactoryTest extends ShardTestSupport {
 
     // Route requests
     for (int i = 0; i < totalRequests; i++) {
-      String routeKey = "user-" + i;
+      String routeKey = routerType == RouterType.MODULO ? String.valueOf(i) : "user-" + i;
       long shardId = shardRouter.getRoutedShardId(routeKey);
       shardCounters.put(shardId, shardCounters.getOrDefault(shardId, 0) + 1);
     }
@@ -366,16 +399,24 @@ public class OrderDaoFactoryTest extends ShardTestSupport {
     int averageCount = totalRequests / activeShardIds.size();
     int tolerance = (int) (averageCount * tolerancePercentage);
 
+    log.info("Distribution results for {} router:", routerType);
     for (long shardId : activeShardIds) {
       int count = shardCounters.get(shardId);
-      double deviation = Math.abs(count - averageCount);
-      double deviationPercentage = (deviation / averageCount) * 100;
+      double deviationPercentage = Math.abs((count - averageCount) * 100.0 / averageCount);
+      log.info(
+          "  Shard {}: {} requests ({:.2f}% of average)",
+          shardId, count, (count * 100.0 / averageCount));
 
       assertTrue(
-          deviation <= tolerance,
+          Math.abs(count - averageCount) <= tolerance,
           String.format(
-              "Shard %d has an imbalance: count=%d, average=%d, deviation=%.2f%%",
-              shardId, count, averageCount, deviationPercentage));
+              "Shard %d has an imbalance with %s router: count=%d, average=%d, deviation=%.2f%%, tolerance=%.2f%%",
+              shardId,
+              routerType,
+              count,
+              averageCount,
+              deviationPercentage,
+              tolerancePercentage * 100));
     }
 
     // Verify all requests were routed
@@ -383,6 +424,8 @@ public class OrderDaoFactoryTest extends ShardTestSupport {
     assertEquals(
         totalRequests,
         totalRoutedRequests,
-        "Total routed requests should match total input requests");
+        "Total routed requests should match total input requests for " + routerType + " router");
+
+    log.info("Distribution test passed for {} router", routerType);
   }
 }

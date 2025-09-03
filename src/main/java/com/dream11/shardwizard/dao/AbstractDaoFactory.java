@@ -10,7 +10,7 @@ import com.dream11.shardwizard.model.EntityShardDetailsMapping;
 import com.dream11.shardwizard.model.ShardConnectionParameters;
 import com.dream11.shardwizard.model.ShardDetails;
 import com.dream11.shardwizard.router.ShardRouter;
-import com.dream11.shardwizard.router.impl.ModuloRouter;
+import com.dream11.shardwizard.router.ShardRouterFactory;
 import com.dream11.shardwizard.shardmanager.ShardManagerClient;
 import com.dream11.shardwizard.utils.CompletableFutureUtils;
 import com.dream11.shardwizard.utils.ShardManagerConfigLoader;
@@ -91,7 +91,7 @@ public abstract class AbstractDaoFactory<T> implements DaoFactory<T> {
   protected abstract long getShardIdFromPrimaryKey(String primaryKey);
 
   protected ShardRouter getShardRouter() {
-    return new ModuloRouter();
+    return ShardRouterFactory.createRouter(shardManagerConfig.getRouterType());
   }
 
   private Single<T> rxGetAndConnectDaoInstance(ShardDetails shardDetails) {
