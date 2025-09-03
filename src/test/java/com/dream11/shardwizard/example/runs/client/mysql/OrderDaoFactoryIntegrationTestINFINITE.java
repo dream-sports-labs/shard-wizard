@@ -2,6 +2,7 @@ package com.dream11.shardwizard.example.runs.client.mysql;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.dream11.shardwizard.constant.DatabaseType;
 import com.dream11.shardwizard.example.ShardTestSupport;
 import com.dream11.shardwizard.example.dto.CreateOrderResponseDTO;
 import com.dream11.shardwizard.example.dto.OrderDto;
@@ -24,7 +25,9 @@ public class OrderDaoFactoryIntegrationTestINFINITE extends ShardTestSupport {
 
   @BeforeAll
   public static void setUp() throws Exception {
-    setupBase();
+    log.info("Starting MySQL integration test INFINITE setup");
+    setupBase(DatabaseType.MYSQL);
+    log.info("MySQL integration test INFINITE setup completed");
   }
 
   @Test
