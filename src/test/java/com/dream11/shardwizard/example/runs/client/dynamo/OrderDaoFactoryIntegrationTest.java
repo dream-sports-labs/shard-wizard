@@ -2,6 +2,7 @@ package com.dream11.shardwizard.example.runs.client.dynamo;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import com.dream11.shardwizard.constant.DatabaseType;
 import com.dream11.shardwizard.example.dto.CreateOrderResponseDTO;
 import com.dream11.shardwizard.example.dto.OrderDto;
 import com.dream11.shardwizard.example.runs.client.OrderDaoFactoryBaseIntegrationTest;
@@ -12,12 +13,20 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.BeforeAll;
 
 @Slf4j
 public class OrderDaoFactoryIntegrationTest extends OrderDaoFactoryBaseIntegrationTest {
 
   static {
     CONFIGURED_ROUND = 1013;
+  }
+
+  @BeforeAll
+  public static void setUp() throws Exception {
+    log.info("Starting DynamoDB integration test setup");
+    setupBaseWithDatabaseType(DatabaseType.DYNAMO);
+    log.info("DynamoDB integration test setup completed");
   }
 
   // DynamoDB-specific implementation methods

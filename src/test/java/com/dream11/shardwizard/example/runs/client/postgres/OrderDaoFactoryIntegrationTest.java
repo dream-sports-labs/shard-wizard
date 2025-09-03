@@ -1,5 +1,6 @@
 package com.dream11.shardwizard.example.runs.client.postgres;
 
+import com.dream11.shardwizard.constant.DatabaseType;
 import com.dream11.shardwizard.example.dto.OrderDto;
 import com.dream11.shardwizard.example.runs.client.OrderDaoFactoryBaseIntegrationTest;
 import com.dream11.shardwizard.model.ShardDetails;
@@ -8,12 +9,20 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.BeforeAll;
 
 @Slf4j
 public class OrderDaoFactoryIntegrationTest extends OrderDaoFactoryBaseIntegrationTest {
 
   static {
     CONFIGURED_ROUND = 1012;
+  }
+
+  @BeforeAll
+  public static void setUp() throws Exception {
+    log.info("Starting PostgreSQL integration test setup");
+    setupBaseWithDatabaseType(DatabaseType.POSTGRES);
+    log.info("PostgreSQL integration test setup completed");
   }
 
   // PostgreSQL-specific implementation methods

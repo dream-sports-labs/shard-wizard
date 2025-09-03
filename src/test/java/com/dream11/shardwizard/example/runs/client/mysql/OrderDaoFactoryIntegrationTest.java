@@ -3,6 +3,7 @@ package com.dream11.shardwizard.example.runs.client.mysql;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import com.dream11.shardwizard.constant.DatabaseType;
 import com.dream11.shardwizard.example.dto.CreateOrderResponseDTO;
 import com.dream11.shardwizard.example.dto.OrderDto;
 import com.dream11.shardwizard.example.runs.client.OrderDaoFactoryBaseIntegrationTest;
@@ -16,6 +17,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 @Slf4j
@@ -23,6 +25,13 @@ public class OrderDaoFactoryIntegrationTest extends OrderDaoFactoryBaseIntegrati
 
   static {
     CONFIGURED_ROUND = 1023;
+  }
+
+  @BeforeAll
+  public static void setUp() throws Exception {
+    log.info("Starting MySQL integration test setup");
+    setupBaseWithDatabaseType(DatabaseType.MYSQL);
+    log.info("MySQL integration test setup completed");
   }
 
   // MySQL-specific implementation methods

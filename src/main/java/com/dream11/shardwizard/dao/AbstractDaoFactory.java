@@ -61,7 +61,6 @@ public abstract class AbstractDaoFactory<T> implements DaoFactory<T> {
    * @deprecated Use {@link #AbstractDaoFactory(Vertx, DatabaseType)} for explicit DatabaseType
    *     control
    */
-  @Deprecated
   protected AbstractDaoFactory(Vertx vertx) {
     this(vertx, ShardManagerConfigLoader.resolveDatabaseType(null));
   }

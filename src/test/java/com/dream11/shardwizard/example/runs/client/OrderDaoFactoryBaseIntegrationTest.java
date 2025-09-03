@@ -3,6 +3,7 @@ package com.dream11.shardwizard.example.runs.client;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import com.dream11.shardwizard.constant.DatabaseType;
 import com.dream11.shardwizard.example.ShardTestSupport;
 import com.dream11.shardwizard.example.dto.CreateOrderResponseDTO;
 import com.dream11.shardwizard.example.dto.OrderDto;
@@ -12,7 +13,6 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 @Slf4j
@@ -24,10 +24,13 @@ public abstract class OrderDaoFactoryBaseIntegrationTest extends ShardTestSuppor
   protected static final int USER_ID_1 = 60009005;
   protected static final int USER_ID_2 = 60009006;
 
-  @BeforeAll
-  public static void setUp() throws Exception {
-    log.info("Starting test setup");
-    setupBase();
+  /**
+   * Each database-specific test should call this method in their @BeforeAll method with the
+   * appropriate DatabaseType for their implementation.
+   */
+  protected static void setupBaseWithDatabaseType(DatabaseType databaseType) throws Exception {
+    log.info("Starting test setup with DatabaseType: {}", databaseType);
+    setupBase(databaseType);
 
     // Verify initialization
     if (vertx == null) {

@@ -55,13 +55,17 @@ public abstract class ShardTestSupport {
   protected static final int CIRCUIT_BREAKER_SLOW_CALL_DURATION_MS = 10000;
 
   protected static void setupBase() throws Exception {
+    setupBase(null); // Use default database type resolution
+  }
+
+  protected static void setupBase(DatabaseType databaseType) throws Exception {
     // Set test environment
     System.setProperty("app.environment", "test");
     CountDownLatch latch = new CountDownLatch(1);
     AtomicReference<Throwable> error = new AtomicReference<>();
 
     try {
-      log.info("Starting base test setup");
+      log.info("Starting base test setup with DatabaseType: {}", databaseType);
 
       vertx = Vertx.vertx();
       log.info("Vertx instance initialized successfully");
@@ -72,8 +76,8 @@ public abstract class ShardTestSupport {
       vertx.runOnContext(
           v -> {
             try {
-              log.info("Initializing AppContext");
-              AppContext.initialize(new MainModule());
+              log.info("Initializing AppContext with DatabaseType: {}", databaseType);
+              AppContext.initialize(new MainModule(databaseType));
               log.info("AppContext initialized successfully");
 
               log.info("Getting OrderDaoFactory instance from AppContext");
