@@ -1,8 +1,10 @@
 package com.dream11.shardwizard.example.runs;
 
+import static com.dream11.shardwizard.example.StandardIntegrationTestSetup.setupPostgresContainers;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.dream11.shardwizard.example.MainModule;
 import com.dream11.shardwizard.example.ShardTestSupport;
 import com.dream11.shardwizard.example.order.OrderDao;
 import com.dream11.shardwizard.example.order.OrderDaoFactory;
@@ -23,51 +25,84 @@ import org.junit.jupiter.api.Test;
 public class OrderDaoFactoryTest extends ShardTestSupport {
 
   private static Vertx vertx;
-  private static final int MYSQL_SHARD_ID = 4;
   private static final int POSTGRES_SHARD_ID = 3;
   private static OrderDaoFactory orderDaoFactory;
 
   @BeforeAll
   public static void setUp() throws Exception {
     log.info("Starting test setup");
+    System.setProperty("app.environment", "test");
     CountDownLatch latch = new CountDownLatch(1);
-    vertx = Vertx.vertx();
-    setupBase();
+    AtomicReference<Throwable> error = new AtomicReference<>();
 
-    vertx.runOnContext(
-        v -> {
-          try {
-            // Get the already initialized OrderDaoFactory
-            orderDaoFactory = AppContext.getInstance(OrderDaoFactory.class);
-            // Bootstrap the factory in a non-blocking way
-            orderDaoFactory
-                .rxBootstrap()
-                .doOnComplete(
-                    () -> {
-                      log.info("OrderDaoFactory bootstrapped successfully");
-                      latch.countDown();
-                    })
-                .doOnError(
-                    error -> {
-                      log.error("Failed to bootstrap OrderDaoFactory", error);
-                      latch.countDown();
-                    })
-                .subscribe();
-          } catch (Exception e) {
-            log.error("Error during setup", e);
-            latch.countDown();
-          }
-        });
-    latch.await();
+    try {
+      log.info("Starting base test setup");
 
-    if (vertx == null) {
-      throw new IllegalStateException("Vertx instance is null after setup");
+      vertx = Vertx.vertx();
+      log.info("Vertx instance initialized successfully");
+
+      setupPostgresContainers();
+      log.info("Standard integration test setup completed");
+
+      vertx.runOnContext(
+          v -> {
+            try {
+              log.info("Initializing AppContext");
+              AppContext.initialize(new MainModule());
+              log.info("AppContext initialized successfully");
+
+              log.info("Getting OrderDaoFactory instance from AppContext");
+              orderDaoFactory = AppContext.getInstance(OrderDaoFactory.class);
+
+              if (orderDaoFactory == null) {
+                String errorMsg =
+                    "Failed to get OrderDaoFactory instance from AppContext - getInstance returned null";
+                log.error(errorMsg);
+                error.set(new IllegalStateException(errorMsg));
+                latch.countDown();
+                return;
+              }
+
+              log.info("OrderDaoFactory instance obtained successfully, starting bootstrap");
+              orderDaoFactory
+                  .rxBootstrap()
+                  .doOnSubscribe(d -> log.info("Bootstrap subscription started"))
+                  .doOnComplete(
+                      () -> {
+                        log.info("OrderDaoFactory bootstrapped successfully");
+                        latch.countDown();
+                      })
+                  .doOnError(
+                      e -> {
+                        log.error(
+                            "Failed to bootstrap OrderDaoFactory due to ==> {} ", e.getMessage());
+                        error.set(e);
+                        latch.countDown();
+                      })
+                  .subscribe();
+            } catch (Exception e) {
+              log.error("Error during setup within Vertx context", e);
+              error.set(e);
+              latch.countDown();
+            }
+          });
+
+      log.info("Waiting for setup completion");
+      awaitAndHandleError(latch, error, "Failed to setup test environment");
+
+      if (orderDaoFactory == null) {
+        throw new IllegalStateException(
+            "OrderDaoFactory is null after setup completion - initialization failed");
+      }
+
+      log.info("Test environment setup completed successfully with initialized OrderDaoFactory");
+    } catch (Exception e) {
+      log.error("Critical error during test setup", e);
+      if (orderDaoFactory == null) {
+        log.error("OrderDaoFactory is null after error");
+      }
+      throw e;
     }
-    if (orderDaoFactory == null) {
-      throw new IllegalStateException("OrderDaoFactory is null after setup");
-    }
-
-    log.info("Test setup completed successfully");
   }
 
   @Test

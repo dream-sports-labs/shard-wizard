@@ -14,6 +14,7 @@ import com.dream11.shardwizard.example.utils.DynamoContainerUtils;
 import com.dream11.shardwizard.example.utils.S3ContainerUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 import lombok.extern.slf4j.Slf4j;
 import org.testcontainers.containers.GenericContainer;
@@ -53,8 +54,14 @@ public class StandardIntegrationTestSetup {
     log.info("Test environment setup completed");
   }
 
-  private static void setupPostgresContainers() {
+  public static void setupPostgresContainers() throws IOException {
     log.info("Setting up Postgres containers");
+
+    ObjectMapper mapper = new ObjectMapper();
+    postgresConfig =
+        mapper.readValue(
+            new File("src/test/resources/sql/postgres/postgres-shard-setup.json"),
+            DBShardConfigDTO.class);
 
     PostgresqlContainer.create(
         postgresConfig.getUserName(),
@@ -74,8 +81,15 @@ public class StandardIntegrationTestSetup {
     }
   }
 
-  private static void setupMysqlContainers() {
+  public static void setupMysqlContainers() throws IOException {
     log.info("Setting up MySQL containers");
+
+    ObjectMapper mapper = new ObjectMapper();
+
+    mysqlConfig =
+        mapper.readValue(
+            new File("src/test/resources/sql/mysql/mysql-shard-setup.json"),
+            DBShardConfigDTO.class);
 
     MysqlContainer.create(
         mysqlConfig.getUserName(),
@@ -95,7 +109,14 @@ public class StandardIntegrationTestSetup {
     }
   }
 
-  private static void setupDynamoContainers() throws Exception {
+  public static void setupDynamoContainers() throws Exception {
+
+    ObjectMapper mapper = new ObjectMapper();
+
+    dynamoConfig =
+        mapper.readValue(
+            new File("src/test/resources/dynamo/dynamo-shard-setup.json"), DBShardConfigDTO.class);
+
     GenericContainer<?> dynamoContainer =
         DynamoContainer.create(dynamoConfig.getShardManager().getPort());
     String endpoint = DynamoContainer.getEndpoint(dynamoContainer, 8000);

@@ -76,7 +76,7 @@ public class OrderDaoFactoryIntegrationTest extends OrderDaoFactoryBaseIntegrati
    * Test that verifies batch insertion and retrieval of orders for a given round. Should insert
    * multiple orders into the correct shard and confirm retrieval.
    */
-  void shouldBatchInsertOrdersAndRetrieveThem() throws Exception {
+  protected void shouldBatchInsertOrdersAndRetrieveThem() throws Exception {
     CountDownLatch latch = new CountDownLatch(1);
     AtomicReference<Throwable> error = new AtomicReference<>();
 
@@ -137,7 +137,7 @@ public class OrderDaoFactoryIntegrationTest extends OrderDaoFactoryBaseIntegrati
    * Test that verifies the creation and retrieval of orders across different rounds in a
    * transaction Should save orders in the correct shards and verify they can be retrieved
    */
-  void shouldSaveAndRetrieveOrdersAcrossDifferentRoundsInaTransaction() throws Exception {
+  protected void shouldSaveAndRetrieveOrdersAcrossDifferentRoundsInaTransaction() throws Exception {
     CountDownLatch latch = new CountDownLatch(1);
     AtomicReference<Throwable> error = new AtomicReference<>();
 
@@ -189,7 +189,7 @@ public class OrderDaoFactoryIntegrationTest extends OrderDaoFactoryBaseIntegrati
    * Test that verifies the creation and retrieval of orders across different rounds in a
    * transaction Should save orders in the correct shards and verify they can be retrieved
    */
-  void shouldSaveOrderInTrx() throws Exception {
+  protected void shouldSaveOrderInTrx() throws Exception {
     CountDownLatch latch = new CountDownLatch(1);
     AtomicReference<Throwable> error = new AtomicReference<>();
 
@@ -241,7 +241,8 @@ public class OrderDaoFactoryIntegrationTest extends OrderDaoFactoryBaseIntegrati
    * Test that verifies the creation and retrieval of orders across different rounds with
    * executeQuery Should save orders in the correct shards and verify they can be retrieved
    */
-  void shouldSaveAndRetrieveOrdersAcrossDifferentRoundsUsingExecuteQuery() throws Exception {
+  protected void shouldSaveAndRetrieveOrdersAcrossDifferentRoundsUsingExecuteQuery()
+      throws Exception {
     CountDownLatch latch = new CountDownLatch(1);
     AtomicReference<Throwable> error = new AtomicReference<>();
 

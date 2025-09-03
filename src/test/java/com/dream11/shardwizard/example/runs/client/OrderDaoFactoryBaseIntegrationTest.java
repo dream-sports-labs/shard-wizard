@@ -45,7 +45,7 @@ public abstract class OrderDaoFactoryBaseIntegrationTest extends ShardTestSuppor
    * Test that verifies the creation and retrieval of orders across different rounds Should save
    * orders in the correct shards and verify they can be retrieved
    */
-  void shouldSaveAndRetrieveOrdersAcrossDifferentRounds() throws Exception {
+  protected void shouldSaveAndRetrieveOrdersAcrossDifferentRounds() throws Exception {
     CountDownLatch latch = new CountDownLatch(1);
     AtomicReference<Throwable> error = new AtomicReference<>();
 
@@ -68,7 +68,7 @@ public abstract class OrderDaoFactoryBaseIntegrationTest extends ShardTestSuppor
    * Test that verifies the shard configuration for different rounds Should return the correct shard
    * details for each configured round
    */
-  void shouldReturnCorrectShardDetailsForDifferentRounds() throws Exception {
+  protected void shouldReturnCorrectShardDetailsForDifferentRounds() throws Exception {
     CountDownLatch latch = new CountDownLatch(1);
     AtomicReference<Throwable> error = new AtomicReference<>();
 
@@ -85,7 +85,7 @@ public abstract class OrderDaoFactoryBaseIntegrationTest extends ShardTestSuppor
   }
 
   @Test
-  void shouldReturnCorrectShardDetailsForValidRound() throws Exception {
+  protected void shouldReturnCorrectShardDetailsForValidRound() throws Exception {
     CountDownLatch latch = new CountDownLatch(1);
     AtomicReference<Throwable> error = new AtomicReference<>();
 
@@ -102,7 +102,7 @@ public abstract class OrderDaoFactoryBaseIntegrationTest extends ShardTestSuppor
   }
 
   @Test
-  void shouldThrowExceptionForInvalidRound() throws Exception {
+  protected void shouldThrowExceptionForInvalidRound() throws Exception {
     CountDownLatch latch = new CountDownLatch(1);
     AtomicReference<Throwable> error = new AtomicReference<>();
 
@@ -119,7 +119,7 @@ public abstract class OrderDaoFactoryBaseIntegrationTest extends ShardTestSuppor
   }
 
   @Test
-  void shouldSaveAndRetrieveOrdersFromCorrectShards() throws Exception {
+  protected void shouldSaveAndRetrieveOrdersFromCorrectShards() throws Exception {
     CountDownLatch latch = new CountDownLatch(1);
     AtomicReference<Throwable> error = new AtomicReference<>();
 
