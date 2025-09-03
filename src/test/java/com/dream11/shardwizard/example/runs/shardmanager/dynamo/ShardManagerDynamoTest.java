@@ -3,16 +3,15 @@ package com.dream11.shardwizard.example.runs.shardmanager.dynamo;
 import static org.junit.Assert.*;
 import static org.junit.Assert.fail;
 
+import com.dream11.shardwizard.config.ShardManagerConfig;
 import com.dream11.shardwizard.constant.DatabaseType;
 import com.dream11.shardwizard.example.runs.shardmanager.ShardManagerTestSetup;
-import com.dream11.shardwizard.example.utils.ConfigUpdater;
 import com.dream11.shardwizard.model.ShardConfig;
 import com.dream11.shardwizard.model.ShardConnectionParameters;
 import com.dream11.shardwizard.model.ShardUpdateResponse;
 import com.dream11.shardwizard.shardmanager.ShardManagerClient;
+import com.dream11.shardwizard.utils.ShardManagerConfigLoader;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
 import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.core.Vertx;
 import java.net.URI;
@@ -31,11 +30,8 @@ import software.amazon.awssdk.services.dynamodb.model.GetItemResponse;
 
 @Slf4j
 public class ShardManagerDynamoTest {
-  private static final String CONFIG_FILE_PATH = "config/shard-manager/default.conf";
-  private static final String RESOURCES_FOLDER_PATH = "src/test/resources/";
-  private static final String DB_TYPE = DatabaseType.DYNAMO.name();
+  private static final DatabaseType SOURCE_TYPE = DatabaseType.DYNAMO;
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-  private static final String SOURCE_TYPE;
   private static final String HOST = "localhost";
   private static final int PORT = 8999;
   private static final String REGION = "us-east-1";
@@ -55,14 +51,11 @@ public class ShardManagerDynamoTest {
 
   private ShardManagerClient dynamoClient;
   private DynamoDbClient dynamoConnection;
+  private ShardManagerConfig shardManagerConfig;
 
   static {
     try {
-      // TODO: Instead of Updating, need to inject this
-      ConfigUpdater.updateSourceTypeInConfigFile(RESOURCES_FOLDER_PATH + CONFIG_FILE_PATH, DB_TYPE);
-      Config config = ConfigFactory.load(CONFIG_FILE_PATH);
-      SOURCE_TYPE = config.getString("sourceType");
-      ShardManagerTestSetup.setup(SOURCE_TYPE);
+      ShardManagerTestSetup.setup(SOURCE_TYPE.name());
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
@@ -80,7 +73,11 @@ public class ShardManagerDynamoTest {
   }
 
   private void initializeClient() {
-    dynamoClient = ShardManagerClient.create(Vertx.vertx());
+    // Use centralized config loader with fallback
+    this.shardManagerConfig = ShardManagerConfigLoader.loadConfigWithFallback(SOURCE_TYPE);
+
+    // Use the new create method with both vertx and config
+    dynamoClient = ShardManagerClient.create(Vertx.vertx(), shardManagerConfig);
     dynamoClient.rxBootstrap().blockingAwait();
   }
 

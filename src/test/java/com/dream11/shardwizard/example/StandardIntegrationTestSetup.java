@@ -33,20 +33,6 @@ public class StandardIntegrationTestSetup {
 
   public static void setup() throws Exception {
     log.info("Setting up test environment");
-    ObjectMapper mapper = new ObjectMapper();
-
-    postgresConfig =
-        mapper.readValue(
-            new File("src/test/resources/sql/postgres/postgres-shard-setup.json"),
-            DBShardConfigDTO.class);
-    mysqlConfig =
-        mapper.readValue(
-            new File("src/test/resources/sql/mysql/mysql-shard-setup.json"),
-            DBShardConfigDTO.class);
-
-    dynamoConfig =
-        mapper.readValue(
-            new File("src/test/resources/dynamo/dynamo-shard-setup.json"), DBShardConfigDTO.class);
     setupPostgresContainers();
     setupMysqlContainers();
     setupS3Environment();

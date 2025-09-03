@@ -2,16 +2,15 @@ package com.dream11.shardwizard.example.runs.shardmanager.s3;
 
 import static org.junit.Assert.*;
 
+import com.dream11.shardwizard.config.ShardManagerConfig;
 import com.dream11.shardwizard.constant.DatabaseType;
 import com.dream11.shardwizard.example.runs.shardmanager.ShardManagerTestSetup;
-import com.dream11.shardwizard.example.utils.ConfigUpdater;
 import com.dream11.shardwizard.example.utils.S3ContainerUtils;
 import com.dream11.shardwizard.model.ShardConfig;
 import com.dream11.shardwizard.model.ShardConnectionParameters;
 import com.dream11.shardwizard.model.ShardUpdateResponse;
 import com.dream11.shardwizard.shardmanager.ShardManagerClient;
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
+import com.dream11.shardwizard.utils.ShardManagerConfigLoader;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.core.Vertx;
@@ -25,10 +24,7 @@ import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 
 @Slf4j
 public class ShardManagerS3Test {
-  private static final String CONFIG_FILE_PATH = "config/shard-manager/default.conf";
-  private static final String RESOURCES_FOLDER_PATH = "src/test/resources/";
-  private static final String DB_TYPE = DatabaseType.S3.name();
-  private static final String SOURCE_TYPE;
+  private static final DatabaseType SOURCE_TYPE = DatabaseType.S3;
   private static final String SHARD_MASTER_PATH = "orders_shard_manager/shardmaster.json";
   private static final String BUCKET_NAME = "d11-contest-orders-load";
   private static final String HOST = "localhost";
@@ -47,14 +43,11 @@ public class ShardManagerS3Test {
   private static final String READER_HOST_FIELD = "readerHost";
 
   private ShardManagerClient s3Client;
+  private ShardManagerConfig shardManagerConfig;
 
   static {
     try {
-      // TODO: Instead of Updating, need to inject this
-      ConfigUpdater.updateSourceTypeInConfigFile(RESOURCES_FOLDER_PATH + CONFIG_FILE_PATH, DB_TYPE);
-      Config config = ConfigFactory.load(CONFIG_FILE_PATH);
-      SOURCE_TYPE = config.getString("sourceType");
-      ShardManagerTestSetup.setup(SOURCE_TYPE);
+      ShardManagerTestSetup.setup(SOURCE_TYPE.name());
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
@@ -71,8 +64,12 @@ public class ShardManagerS3Test {
   }
 
   private void initializeClient() {
-    s3Client = ShardManagerClient.create(Vertx.vertx());
-    s3Client.rxBootstrap();
+    // Use centralized config loader with fallback
+    this.shardManagerConfig = ShardManagerConfigLoader.loadConfigWithFallback(SOURCE_TYPE);
+
+    // Use the new create method with both vertx and config
+    s3Client = ShardManagerClient.create(Vertx.vertx(), shardManagerConfig);
+    s3Client.rxBootstrap().blockingAwait();
   }
 
   @Test

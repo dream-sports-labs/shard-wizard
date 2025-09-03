@@ -11,8 +11,25 @@ import lombok.NonNull;
 
 public class OrderDaoFactory extends AbstractDaoFactory<OrderDao> {
 
+  /**
+   * Legacy constructor for backward compatibility. Uses intelligent fallback to determine
+   * DatabaseType from system properties or default.conf.
+   *
+   * @param vertx Vertx instance
+   * @deprecated Use {@link #OrderDaoFactory(Vertx, DatabaseType)} for explicit DatabaseType control
+   */
   public OrderDaoFactory(Vertx vertx) {
     super(vertx);
+  }
+
+  /**
+   * Constructor with explicit DatabaseType for better control and testing.
+   *
+   * @param vertx Vertx instance
+   * @param sourceType The database type to use for configuration loading
+   */
+  public OrderDaoFactory(Vertx vertx, DatabaseType sourceType) {
+    super(vertx, sourceType);
   }
 
   @Override

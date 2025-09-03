@@ -1,9 +1,9 @@
 package com.dream11.shardwizard.dao;
 
 import static com.dream11.shardwizard.constant.Constants.REFRESH_SHARDS_TIMEOUT_SECONDS;
-import static com.dream11.shardwizard.constant.Constants.SHARD_MANAGER_CONFIG_FOLDER;
 
 import com.dream11.shardwizard.config.ShardManagerConfig;
+import com.dream11.shardwizard.constant.DatabaseType;
 import com.dream11.shardwizard.exception.DatabaseTypeNotFoundException;
 import com.dream11.shardwizard.exception.ShardNotPresentException;
 import com.dream11.shardwizard.model.EntityShardDetailsMapping;
@@ -13,7 +13,7 @@ import com.dream11.shardwizard.router.ShardRouter;
 import com.dream11.shardwizard.router.impl.ModuloRouter;
 import com.dream11.shardwizard.shardmanager.ShardManagerClient;
 import com.dream11.shardwizard.utils.CompletableFutureUtils;
-import com.dream11.shardwizard.utils.ConfigUtils;
+import com.dream11.shardwizard.utils.ShardManagerConfigLoader;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.typesafe.config.ConfigBeanFactory;
@@ -53,14 +53,34 @@ public abstract class AbstractDaoFactory<T> implements DaoFactory<T> {
 
   private final ScheduledExecutorService executorService;
 
+  /**
+   * Legacy constructor for backward compatibility. Uses intelligent fallback to determine
+   * DatabaseType from system properties or default.conf.
+   *
+   * @param vertx Vertx instance
+   * @deprecated Use {@link #AbstractDaoFactory(Vertx, DatabaseType)} for explicit DatabaseType
+   *     control
+   */
+  @Deprecated
   protected AbstractDaoFactory(Vertx vertx) {
+    this(vertx, ShardManagerConfigLoader.resolveDatabaseType(null));
+  }
+
+  /**
+   * Constructor with explicit DatabaseType for better control and testing.
+   *
+   * @param vertx Vertx instance
+   * @param sourceType The database type to use for configuration loading
+   */
+  protected AbstractDaoFactory(Vertx vertx, DatabaseType sourceType) {
     this.vertx = vertx;
-    this.shardManagerConfig =
-        ConfigUtils.fromConfigFile(
-            "config/" + SHARD_MANAGER_CONFIG_FOLDER + "/%s.conf", ShardManagerConfig.class);
+
+    // Use centralized config loader with fallback
+    this.shardManagerConfig = ShardManagerConfigLoader.loadConfigWithFallback(sourceType);
+
     this.shardIdToDaoCache = new ConcurrentHashMap<>();
     this.entityIdToShardMappingCache = new ConcurrentHashMap<>();
-    this.shardManagerClient = ShardManagerClient.create(vertx);
+    this.shardManagerClient = ShardManagerClient.create(vertx, shardManagerConfig);
     this.executorService = Executors.newSingleThreadScheduledExecutor();
     this.entityToShardRouterCache = new ConcurrentHashMap<>();
   }
