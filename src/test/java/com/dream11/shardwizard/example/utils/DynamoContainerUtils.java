@@ -38,7 +38,6 @@ public class DynamoContainerUtils {
     private final String secretKey;
     private final String region;
     private final String endpoint;
-    private final String tableName;
   }
 
   public DynamoContainerUtils() {
