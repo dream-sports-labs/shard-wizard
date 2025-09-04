@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.http.crt.AwsCrtAsyncHttpClient;
 import software.amazon.awssdk.http.crt.TcpKeepAliveConfiguration;
 import software.amazon.awssdk.regions.Region;
@@ -69,24 +70,37 @@ public class DynamoVertxClientImpl extends AbstractCircuitBreakerClient
 
   private DynamoDbAsyncClient buildDynamoDbAsyncClient(ShardConnectionParameters connectionParams) {
 
-    // Use configuration values (defaults are now handled by @Builder.Default in POJO)
+    // Build client override configuration with basic timeout settings
+    ClientOverrideConfiguration overrideConfig =
+        ClientOverrideConfiguration.builder()
+            .apiCallTimeout(Duration.ofMillis(connectionParams.getDynamoApiCallTimeoutMs()))
+            .apiCallAttemptTimeout(
+                Duration.ofMillis(connectionParams.getDynamoApiCallAttemptTimeoutMs()))
+            .build();
+
+    // Build HTTP client with available configuration options
+    AwsCrtAsyncHttpClient.Builder httpClientBuilder =
+        AwsCrtAsyncHttpClient.builder()
+            .connectionTimeout(Duration.ofMillis(connectionParams.getDynamoConnectionTimeoutMs()))
+            .connectionMaxIdleTime(
+                Duration.ofMillis(connectionParams.getDynamoConnectionMaxIdleTimeMs()))
+            .maxConcurrency(connectionParams.getDynamoMaxConcurrency())
+            .connectionAcquisitionTimeout(
+                Duration.ofMillis(connectionParams.getDynamoConnectionAcquisitionTimeoutMs()))
+            .tcpKeepAliveConfiguration(
+                TcpKeepAliveConfiguration.builder()
+                    .keepAliveInterval(
+                        Duration.ofMillis(connectionParams.getDynamoKeepAliveIntervalMs()))
+                    .keepAliveTimeout(
+                        Duration.ofMillis(connectionParams.getDynamoKeepAliveTimeoutMs()))
+                    .build());
+
+    // Build DynamoDB client with configurations
     DynamoDbAsyncClientBuilder builder =
         DynamoDbAsyncClient.builder()
             .region(Region.of(connectionParams.getRegion()))
-            .httpClientBuilder(
-                AwsCrtAsyncHttpClient.builder()
-                    .connectionTimeout(
-                        Duration.ofMillis(connectionParams.getDynamoConnectionTimeoutMs()))
-                    .connectionMaxIdleTime(
-                        Duration.ofMillis(connectionParams.getDynamoConnectionMaxIdleTimeMs()))
-                    .maxConcurrency(connectionParams.getDynamoMaxConcurrency())
-                    .tcpKeepAliveConfiguration(
-                        TcpKeepAliveConfiguration.builder()
-                            .keepAliveInterval(
-                                Duration.ofMillis(connectionParams.getDynamoKeepAliveIntervalMs()))
-                            .keepAliveTimeout(
-                                Duration.ofMillis(connectionParams.getDynamoKeepAliveTimeoutMs()))
-                            .build()));
+            .overrideConfiguration(overrideConfig)
+            .httpClientBuilder(httpClientBuilder);
 
     String accessKey = connectionParams.getAccessKey();
     String secretKey = connectionParams.getSecretKey();
@@ -189,8 +203,15 @@ public class DynamoVertxClientImpl extends AbstractCircuitBreakerClient
     return withCircuitBreaker(
         AsyncResultSingle.toSingle(
             handler -> {
+              GetItemRequest request =
+                  GetItemRequest.builder()
+                      .tableName(tableName)
+                      .key(key)
+                      .consistentRead(connectionParams.getDynamoConsistentRead())
+                      .build();
+
               dynamoClient
-                  .getItem(GetItemRequest.builder().tableName(tableName).key(key).build())
+                  .getItem(request)
                   .whenComplete(
                       (response, throwable) -> {
                         context.runOnContext(
@@ -280,7 +301,8 @@ public class DynamoVertxClientImpl extends AbstractCircuitBreakerClient
         QueryRequest.builder()
             .tableName(tableName)
             .keyConditionExpression(keyConditionExpression)
-            .expressionAttributeValues(expressionAttributeValues);
+            .expressionAttributeValues(expressionAttributeValues)
+            .consistentRead(connectionParams.getDynamoConsistentRead());
 
     if (indexName != null) {
       builder.indexName(indexName);

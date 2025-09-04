@@ -1,7 +1,11 @@
 package com.dream11.shardwizard.model;
 
+import static com.dream11.shardwizard.config.DynamoConfig.DEFAULT_API_CALL_ATTEMPT_TIMEOUT_MS;
+import static com.dream11.shardwizard.config.DynamoConfig.DEFAULT_API_CALL_TIMEOUT_MS;
+import static com.dream11.shardwizard.config.DynamoConfig.DEFAULT_CONNECTION_ACQUISITION_TIMEOUT_MS;
 import static com.dream11.shardwizard.config.DynamoConfig.DEFAULT_CONNECTION_MAX_IDLE_TIME_MS;
 import static com.dream11.shardwizard.config.DynamoConfig.DEFAULT_CONNECTION_TIMEOUT_MS;
+import static com.dream11.shardwizard.config.DynamoConfig.DEFAULT_CONSISTENT_READ;
 import static com.dream11.shardwizard.config.DynamoConfig.DEFAULT_KEEP_ALIVE_INTERVAL_MS;
 import static com.dream11.shardwizard.config.DynamoConfig.DEFAULT_KEEP_ALIVE_TIMEOUT_MS;
 import static com.dream11.shardwizard.config.DynamoConfig.DEFAULT_MAX_CONCURRENCY;
@@ -61,4 +65,17 @@ public class ShardConnectionParameters {
 
   @Optional @Builder.Default
   private Integer dynamoKeepAliveTimeoutMs = DEFAULT_KEEP_ALIVE_TIMEOUT_MS;
+
+  // DynamoDB timeout configuration properties
+  @Optional @Builder.Default private Long dynamoApiCallTimeoutMs = DEFAULT_API_CALL_TIMEOUT_MS;
+
+  @Optional @Builder.Default
+  private Long dynamoApiCallAttemptTimeoutMs = DEFAULT_API_CALL_ATTEMPT_TIMEOUT_MS;
+
+  // DynamoDB advanced HTTP client configuration properties
+  @Optional @Builder.Default
+  private Long dynamoConnectionAcquisitionTimeoutMs = DEFAULT_CONNECTION_ACQUISITION_TIMEOUT_MS;
+
+  // DynamoDB read configuration properties
+  @Optional @Builder.Default private Boolean dynamoConsistentRead = DEFAULT_CONSISTENT_READ;
 }
