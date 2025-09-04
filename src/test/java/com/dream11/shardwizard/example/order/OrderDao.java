@@ -1,5 +1,7 @@
 package com.dream11.shardwizard.example.order;
 
+import com.dream11.shardwizard.example.dto.CreateOrderResponseDTO;
+import com.dream11.shardwizard.example.dto.OrderDto;
 import io.reactivex.Single;
 import io.vertx.reactivex.sqlclient.SqlConnection;
 import io.vertx.reactivex.sqlclient.Transaction;
@@ -8,9 +10,9 @@ import java.util.function.Function;
 
 public interface OrderDao {
 
-  Single<CreateOrderResponse> create(OrderDto orderDto);
+  Single<CreateOrderResponseDTO> create(OrderDto orderDto);
 
-  Single<List<CreateOrderResponse>> createBulk(List<OrderDto> orderDtos);
+  Single<List<CreateOrderResponseDTO>> createBulk(List<OrderDto> orderDtos);
 
   Single<OrderDto> get(String orderId);
 
@@ -18,7 +20,7 @@ public interface OrderDao {
 
   Single<Boolean> delete(OrderDto orderDto);
 
-  Single<List<CreateOrderResponse>> createBatch(List<OrderDto> orders);
+  Single<List<CreateOrderResponseDTO>> createBatch(List<OrderDto> orders);
 
   <T> Single<T> createTransaction(Function<SqlConnection, Single<T>> function);
 
@@ -26,5 +28,5 @@ public interface OrderDao {
 
   Single<Boolean> rxCommitTransaction(Transaction transaction);
 
-  Single<CreateOrderResponse> rxExecuteQuery(OrderDto orderDto);
+  Single<CreateOrderResponseDTO> rxExecuteQuery(OrderDto orderDto);
 }

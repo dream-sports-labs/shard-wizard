@@ -78,5 +78,25 @@
     },
     "default": false,
     "active": false
+  },
+  {
+    "shardId": 6,
+    "details": {
+      "databaseType": "DYNAMO",
+      "shardConnectionParams": {
+        "writerHost": "http://localhost:9111",
+        "readerHost": "http://localhost:9111",
+        "endpoint": "http://localhost:9111",
+        "region": "us-east-1",
+        "accessKey": "dummy",
+        "secretKey": "dummy",
+        "port": 9111,
+        "maxConnections": 5,
+        "maxWaitQueueSize": 50,
+        "connectionTimeoutMs": 500
+      }
+    },
+    "default": true,
+    "active": true
   }
 ]

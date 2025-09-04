@@ -2,7 +2,7 @@
 
 [![Maven Central](https://img.shields.io/maven-central/v/com.dream11/shard-wizard)](https://search.maven.org/artifact/com.dream11/shard-wizard)
 [![Java Version](https://img.shields.io/badge/java-11+-blue.svg)](https://openjdk.java.net/)
-[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![GitHub Issues](https://img.shields.io/github/issues/dream11/shard-wizard)](https://github.com/dream11/shard-wizard/issues)
 [![GitHub Stars](https://img.shields.io/github/stars/dream11/shard-wizard)](https://github.com/dream11/shard-wizard/stargazers)
 
@@ -15,7 +15,7 @@ ShardWizard is designed to solve complex database sharding challenges in high-sc
 ### Key Features
 
 - **🔄 Dynamic Shard Management**: Add or remove shards without application downtime
-- **🎯 Intelligent Routing**: Consistent hashing and custom routing strategies
+- **🎯 Intelligent Routing**: Configurable modulo and consistent hashing strategies
 - **🛡️ Fault Tolerance**: Built-in circuit breakers and automatic failover
 - **📊 Multi-Database Support**: PostgreSQL, MySQL, DynamoDB, and S3 backends
 - **📈 Observability**: Comprehensive metrics, tracing, and health monitoring
@@ -87,11 +87,17 @@ Add the dependency to your `pom.xml`:
 
 ### Configuration
 
-Create configuration file at `src/main/resources/config/shard-manager/default.conf`:
+ShardWizard supports multiple configuration approaches with intelligent fallback:
 
+#### Database-Specific Configuration (Recommended)
+
+Create database-specific configuration files:
+
+**`src/main/resources/config/shard-manager/postgres.conf`:**
 ```hocon
-sourceType = "POSTGRES"  # POSTGRES, MYSQL, DYNAMO, or S3
+sourceType = "POSTGRES"
 shardsRefreshSeconds = 60
+routerType = "MODULO"  # Options: MODULO, CONSISTENT
 serviceName = "my-service"
 
 sources = {
@@ -120,6 +126,114 @@ sources = {
   }
 }
 ```
+
+**`src/main/resources/config/shard-manager/s3.conf`:**
+```hocon
+sourceType = "S3"
+shardsRefreshSeconds = 60
+routerType = "CONSISTENT"  # Options: MODULO, CONSISTENT
+serviceName = "my-service"
+
+sources = {
+  S3 {
+    type = "S3"
+    bucketName = "my-shard-config-bucket"
+    shardMasterFilePath = "shard-master.json"
+    entityShardMappingFolderPath = "entity-mappings/"
+    region = "us-east-1"
+    accessKey = ""  # Use IAM roles
+    secretKey = ""  # Use IAM roles
+    endpointOverride = ""  # For LocalStack testing
+    forcePathStyle = false
+    
+    databaseDefaultShardConfigMap = {
+      POSTGRES {
+        database = "app_shard"
+        username = "app_user" 
+        password = "app_password"
+        maxConnections = 10
+        circuitBreaker {
+          enabled = true
+          failureRateThreshold = 50
+          waitDurationInOpenState = 30000
+        }
+      }
+    }
+  }
+}
+```
+
+#### Universal Fallback Configuration
+
+Create a fallback configuration at `src/main/resources/config/shard-manager/default.conf`:
+
+```hocon
+sourceType = "POSTGRES"  # Default fallback type
+shardsRefreshSeconds = 60
+routerType = "MODULO"  # Default router type
+serviceName = "my-service"
+
+# Contains configurations for ALL supported database types
+sources = {
+  POSTGRES {
+    type = "POSTGRES"
+    writerHost = "localhost"
+    readerHost = "localhost"
+    port = 5432
+    database = "shardmaster"
+    username = "postgres"
+    password = "password"
+    databaseDefaultShardConfigMap = { /* ... */ }
+  }
+  
+  S3 {
+    type = "S3"
+    bucketName = "my-shard-config-bucket"
+    shardMasterFilePath = "shard-master.json"
+    entityShardMappingFolderPath = "entity-mappings/"
+    region = "us-east-1"
+    databaseDefaultShardConfigMap = { /* ... */ }
+  }
+  
+  MYSQL {
+    type = "MYSQL"
+    writerHost = "localhost"
+    readerHost = "localhost"
+    port = 3306
+    database = "shardmaster"
+    username = "mysql"
+    password = "mysql"
+    databaseDefaultShardConfigMap = { /* ... */ }
+  }
+  
+  DYNAMO {
+    type = "DYNAMO"
+    region = "us-east-1"
+    endpointOverride = "http://localhost:8000"
+    databaseDefaultShardConfigMap = { /* ... */ }
+  }
+}
+```
+
+#### Configuration Priority
+
+1. **Database-specific config**: `postgres.conf`, `s3.conf`, `mysql.conf`, `dynamo.conf`
+2. **Fallback**: `default.conf`
+3. **System property**: `-Dshard.source.type=POSTGRES`
+
+#### Configuration Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `sourceType` | String | Required | Database type for shard master storage (`POSTGRES`, `MYSQL`, `S3`, `DYNAMO`) |
+| `routerType` | String | `MODULO` | Routing strategy (`MODULO`, `CONSISTENT`) |
+| `shardsRefreshSeconds` | Integer | `60` | Frequency of shard configuration refresh |
+| `serviceName` | String | Required | Service name for metrics and logging |
+| `metricsAgent` | String | `noop` | Observability provider (`datadog`, `newrelic`, `noop`) |
+
+**Router Type Details:**
+- **`MODULO`**: Perfect distribution for numeric route keys, ideal for high-performance scenarios
+- **`CONSISTENT`**: Consistent hashing for minimal data movement during scaling, ideal for dynamic environments
 
 ## 🗄️ Shard Master Setup
 
@@ -243,17 +357,20 @@ Create JSON files in your S3 bucket:
 }
 ```
 
-Configuration for S3:
+Configuration for S3 (add to your `s3.conf`):
 ```hocon
+sourceType = "S3"
 sources = {
   S3 {
     type = "S3"
     bucketName = "my-shard-config-bucket"
-    shardMasterFilePath = "shard-manager/shard-master.json"
-    entityShardMappingFolderPath = "shard-manager/entity-mappings/"
+    shardMasterFilePath = "shard-master.json"
+    entityShardMappingFolderPath = "entity-mappings/"
     region = "us-east-1"
     accessKey = ""  # Use IAM roles
     secretKey = ""  # Use IAM roles
+    endpointOverride = ""  # For LocalStack
+    forcePathStyle = false
   }
 }
 ```
@@ -273,10 +390,17 @@ public interface OrderDao {
 ### 2. Implement DAO Factory
 
 ```java
-public class OrderDaoFactory extends DaoFactory<OrderDao> {
+public class OrderDaoFactory extends AbstractDaoFactory<OrderDao> {
 
+    // Legacy constructor for backward compatibility (uses intelligent fallback)
+    @Deprecated
     public OrderDaoFactory(Vertx vertx) {
         super(vertx);
+    }
+    
+    // Recommended constructor with explicit DatabaseType
+    public OrderDaoFactory(Vertx vertx, DatabaseType sourceType) {
+        super(vertx, sourceType);
     }
 
     @Override
@@ -334,16 +458,61 @@ public class PostgresOrderDaoImpl extends PostgresBaseDao implements OrderDao {
 
 ### 4. Bootstrap Application
 
+#### Option A: With Explicit DatabaseType (Recommended)
+
 ```java
 public class Application {
     
     public static void main(String[] args) {
         Vertx vertx = Vertx.vertx();
-        OrderDaoFactory factory = new OrderDaoFactory(vertx);
+        
+        // Explicit database type - loads postgres.conf
+        OrderDaoFactory factory = new OrderDaoFactory(vertx, DatabaseType.POSTGRES);
         
         factory.rxBootstrap()
             .subscribe(
                 () -> log.info("ShardWizard started successfully"),
+                error -> log.error("Failed to start", error)
+            );
+    }
+}
+```
+
+#### Option B: Using System Property
+
+```java
+public class Application {
+    
+    public static void main(String[] args) {
+        // Set system property to control database type
+        System.setProperty("shard.source.type", "S3");
+        
+        Vertx vertx = Vertx.vertx();
+        OrderDaoFactory factory = new OrderDaoFactory(vertx, DatabaseType.S3);
+        
+        factory.rxBootstrap()
+            .subscribe(
+                () -> log.info("ShardWizard started successfully"),
+                error -> log.error("Failed to start", error)
+            );
+    }
+}
+```
+
+#### Option C: Legacy Approach (Backward Compatible)
+
+```java
+public class Application {
+    
+    public static void main(String[] args) {
+        Vertx vertx = Vertx.vertx();
+        
+        // Uses intelligent fallback: system property → default.conf → POSTGRES
+        OrderDaoFactory factory = new OrderDaoFactory(vertx);
+        
+        factory.rxBootstrap()
+            .subscribe(
+                () -> log.info("ShardWizard started successfully"), 
                 error -> log.error("Failed to start", error)
             );
     }
@@ -370,6 +539,76 @@ public class OrderService {
             .flatMap(dao -> dao.get(orderId));
     }
 }
+```
+
+### 6. Dependency Injection Setup (Optional)
+
+#### Guice Configuration
+
+```java
+public class MainModule extends AbstractModule {
+    
+    private final DatabaseType databaseType;
+    
+    public MainModule() {
+        this(null); // Uses intelligent fallback
+    }
+    
+    public MainModule(DatabaseType databaseType) {
+        this.databaseType = databaseType;
+    }
+
+    @Override
+    protected void configure() {
+        bind(OrderDaoFactory.class).toProvider(OrderDaoFactoryProvider.class).in(Singleton.class);
+    }
+
+    @Provides
+    @Singleton
+    public Vertx provideVertx() {
+        return Vertx.vertx();
+    }
+
+    @Provides
+    @Singleton
+    public DatabaseType provideDatabaseType() {
+        return ShardManagerConfigLoader.resolveDatabaseType(databaseType);
+    }
+}
+```
+
+#### Factory Provider
+
+```java
+public class OrderDaoFactoryProvider implements Provider<OrderDaoFactory> {
+
+    @Inject Vertx vertx;
+    
+    // Optional injection - for backward compatibility
+    @Inject(optional = true) DatabaseType sourceType;
+
+    @Override
+    public OrderDaoFactory get() {
+        if (sourceType != null) {
+            return new OrderDaoFactory(vertx, sourceType);
+        } else {
+            return new OrderDaoFactory(vertx); // Uses fallback
+        }
+    }
+}
+```
+
+#### Usage
+
+```java
+// With explicit database type
+AppContext.initialize(new MainModule(DatabaseType.POSTGRES));
+
+// With fallback mechanism
+AppContext.initialize(new MainModule());
+
+// Get factory instance
+OrderDaoFactory factory = AppContext.getInstance(OrderDaoFactory.class);
 ```
 
 ## 📊 Observability
@@ -417,30 +656,121 @@ ObservabilityServiceFactory.setConfiguration(config);
 
 ## 🔧 Advanced Features
 
-### Custom Routing
+### ShardManagerClient
 
 ```java
-public class CustomRouter implements ShardRouter {
+// Option 1: With explicit configuration (recommended)
+ShardManagerConfig config = ShardManagerConfigLoader.loadConfigWithFallback(DatabaseType.POSTGRES);
+ShardManagerClient shardManager = ShardManagerClient.create(vertx, config);
+
+// Option 2: Legacy approach (uses fallback)
+ShardManagerClient shardManager = ShardManagerClient.create(vertx);
+```
+
+### Routing Strategies
+
+ShardWizard provides two built-in routing strategies that can be configured per deployment:
+
+#### Modulo Routing (`MODULO`)
+
+```hocon
+routerType = "MODULO"
+```
+
+**Characteristics:**
+- Uses modulo operation: `shardId = routeKey % totalShards`
+- **Perfect distribution** for sequential numeric keys
+- **Fast performance** - O(1) routing decisions
+- **Best for:** Numeric IDs, sequential data, high-performance requirements
+
+**Use Cases:**
+- Auto-incrementing primary keys
+- User IDs, order IDs, transaction IDs
+- Applications requiring perfect load distribution
+
+#### Consistent Hashing (`CONSISTENT`)
+
+```hocon
+routerType = "CONSISTENT"
+```
+
+**Characteristics:**
+- Uses consistent hashing with virtual nodes
+- **Resilient to shard changes** - minimal data movement when adding/removing shards
+- **Good distribution** for string-based keys
+- **Best for:** Dynamic scaling, string-based route keys, hash-based workloads
+
+**Use Cases:**
+- Username-based routing
+- UUID-based keys
+- Applications requiring frequent scaling operations
+- Multi-tenant systems with tenant-based routing
+
+#### Comparison
+
+| Feature | MODULO | CONSISTENT |
+|---------|---------|------------|
+| **Distribution Quality** | Perfect for numeric keys | Good for all key types |
+| **Performance** | Fastest (O(1)) | Fast (O(log n)) |
+| **Scaling Impact** | High - requires data migration | Low - minimal data movement |
+| **Memory Usage** | Minimal | Higher (virtual nodes) |
+| **Best Route Keys** | Numeric IDs | Any string format |
+
+### Custom Routing
+
+For advanced use cases, you can implement custom routing logic by extending the `AbstractDaoFactory`:
+
+```java
+public class CustomOrderDaoFactory extends AbstractDaoFactory<OrderDao> {
+    
     @Override
-    public long getRoutedShardId(String routeKey) {
-        // Your custom routing logic
-        return routeKey.hashCode() % shardIds.size();
+    protected ShardRouter getShardRouter() {
+        // Option 1: Use configuration-driven routing (recommended)
+        return ShardRouterFactory.createRouter(shardManagerConfig.getRouterType());
+        
+        // Option 2: Custom implementation
+        return new ShardRouter() {
+            @Override
+            public void initialize(List<Long> shardIds) {
+                this.shardIds = shardIds;
+            }
+            
+            @Override
+            public long getRoutedShardId(String routeKey) {
+                // Your custom routing logic
+                return customRoutingLogic(routeKey);
+            }
+        };
     }
 }
+```
 
-// Use in DAO factory
-@Override
-protected ShardRouter getShardRouter() {
-    return new CustomRouter();
+#### Configuration Override Example
+
+```java
+// Override router type programmatically if needed
+public class CustomOrderDaoFactory extends OrderDaoFactory {
+    public CustomOrderDaoFactory(Vertx vertx, DatabaseType sourceType) {
+        super(vertx, sourceType);
+        // Configuration is already loaded via parent constructor
+    }
+    
+    @Override
+    protected ShardRouter getShardRouter() {
+        // Force consistent routing regardless of configuration
+        return ShardRouterFactory.createRouter(RouterType.CONSISTENT);
+    }
 }
 ```
 
 ### Dynamic Shard Management
 
 ```java
-// Add new shard at runtime
-ShardManagerClient shardManager = ShardManagerClient.create(vertx);
+// Load configuration explicitly
+ShardManagerConfig config = ShardManagerConfigLoader.loadConfigWithFallback(DatabaseType.POSTGRES);
+ShardManagerClient shardManager = ShardManagerClient.create(vertx, config);
 
+// Add new shard at runtime
 ShardConfig newShard = ShardConfig.builder()
     .databaseType(DatabaseType.POSTGRES)
     .shardConnectionParams(/* connection params */)
@@ -449,6 +779,12 @@ ShardConfig newShard = ShardConfig.builder()
 shardManager.rxRegisterNewShard(true, newShard)
     .subscribe(shardDetails -> log.info("New shard added: {}", shardDetails.getShardId()));
 ```
+
+
+
+### Backward Compatibility
+
+Existing code continues to work unchanged. New constructor with explicit `DatabaseType` is recommended for better control.
 
 ## 🤝 Contributing
 
@@ -483,22 +819,22 @@ We welcome contributions! Here's how you can help:
 
 ## 📄 License
 
-This project is licensed under the Apache License 2.0 - see the full license text at [Apache 2.0](https://opensource.org/licenses/Apache-2.0).
+This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
 
 ```
-Copyright 2024 Dream11
+MIT License
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+Copyright (c) 2025 Dream Sports Labs
 
-    http://www.apache.org/licenses/LICENSE-2.0
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 ```
 
 ## 🆘 Support

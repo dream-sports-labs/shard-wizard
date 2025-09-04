@@ -7,7 +7,7 @@ import com.dream11.shardwizard.exception.DatabaseTypeNotFoundException;
 import com.dream11.shardwizard.shardmanager.ShardManagerClient;
 import com.dream11.shardwizard.shardmanager.ShardManagerClientFactory;
 import com.dream11.shardwizard.shardmanager.impl.dynamo.DynamoShardManagerClientFactory;
-import com.dream11.shardwizard.shardmanager.impl.mysql.MySqlShardManagerClientFactory;
+import com.dream11.shardwizard.shardmanager.impl.mysql.MysqlShardManagerClientFactory;
 import com.dream11.shardwizard.shardmanager.impl.postgres.PostgresShardManagerClientFactory;
 import com.dream11.shardwizard.shardmanager.impl.s3.S3ShardManagerClientFactory;
 import com.dream11.shardwizard.utils.ConfigUtils;
@@ -26,7 +26,7 @@ public class ShardManagerFactory {
       new EnumMap<>(DatabaseType.class);
 
   static {
-    factoryMap.put(DatabaseType.MYSQL, new MySqlShardManagerClientFactory());
+    factoryMap.put(DatabaseType.MYSQL, new MysqlShardManagerClientFactory());
     factoryMap.put(DatabaseType.POSTGRES, new PostgresShardManagerClientFactory());
     factoryMap.put(DatabaseType.S3, new S3ShardManagerClientFactory());
     factoryMap.put(DatabaseType.DYNAMO, new DynamoShardManagerClientFactory());

@@ -84,8 +84,12 @@
     "details": {
       "databaseType": "DYNAMO",
       "shardConnectionParams": {
-        "writerHost": "localhost",
-        "readerHost": "localhost",
+        "writerHost": "http://localhost:9111",
+        "readerHost": "http://localhost:9111",
+        "endpoint": "http://localhost:9111",
+        "region": "us-east-1",
+        "accessKey": "dummy",
+        "secretKey": "dummy",
         "port": 9111,
         "maxConnections": 5,
         "maxWaitQueueSize": 50,

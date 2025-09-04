@@ -1,9 +1,9 @@
 package com.dream11.shardwizard.example.order.impl;
 
 import com.dream11.shardwizard.dao.BaseDaoAbstract;
-import com.dream11.shardwizard.example.order.CreateOrderResponse;
+import com.dream11.shardwizard.example.dto.CreateOrderResponseDTO;
+import com.dream11.shardwizard.example.dto.OrderDto;
 import com.dream11.shardwizard.example.order.OrderDao;
-import com.dream11.shardwizard.example.order.OrderDto;
 import com.dream11.shardwizard.model.ShardDetails;
 import io.reactivex.Completable;
 import io.reactivex.Single;
@@ -44,13 +44,13 @@ public class CustomDatabaseOrderDaoImpl extends BaseDaoAbstract
   }
 
   @Override
-  public Single<CreateOrderResponse> create(OrderDto orderDto) {
+  public Single<CreateOrderResponseDTO> create(OrderDto orderDto) {
     System.out.println("MysqlOrderDto created");
-    return Single.just(new CreateOrderResponse());
+    return Single.just(new CreateOrderResponseDTO());
   }
 
   @Override
-  public Single<List<CreateOrderResponse>> createBulk(List<OrderDto> orderDtos) {
+  public Single<List<CreateOrderResponseDTO>> createBulk(List<OrderDto> orderDtos) {
     return null;
   }
 
@@ -61,9 +61,9 @@ public class CustomDatabaseOrderDaoImpl extends BaseDaoAbstract
   }
 
   @Override
-  public Single<List<CreateOrderResponse>> createBatch(List<OrderDto> orders) {
+  public Single<List<CreateOrderResponseDTO>> createBatch(List<OrderDto> orders) {
     System.out.println("MysqlOrderDto created in batch");
-    return Single.just(List.of(new CreateOrderResponse()));
+    return Single.just(List.of(new CreateOrderResponseDTO()));
   }
 
   @Override
@@ -85,7 +85,7 @@ public class CustomDatabaseOrderDaoImpl extends BaseDaoAbstract
   }
 
   @Override
-  public Single<CreateOrderResponse> rxExecuteQuery(OrderDto orderDto) {
+  public Single<CreateOrderResponseDTO> rxExecuteQuery(OrderDto orderDto) {
     return null;
   }
 

@@ -1,5 +1,8 @@
 package com.dream11.shardwizard.example.runs.shardmanager;
 
+import static com.dream11.shardwizard.example.ShardTestSupport.DEFAULT_ACCESS_KEY;
+import static com.dream11.shardwizard.example.ShardTestSupport.DEFAULT_SECRET_KEY;
+
 import com.dream11.shardwizard.constant.DatabaseType;
 import com.dream11.shardwizard.example.containers.DynamoContainer;
 import com.dream11.shardwizard.example.containers.LocalStackS3Container;
@@ -13,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+import software.amazon.awssdk.regions.Region;
 
 @Slf4j
 public class ShardManagerTestSetup {
@@ -105,10 +109,10 @@ public class ShardManagerTestSetup {
     DynamoContainerUtils dynamoContainerUtils = new DynamoContainerUtils();
     DynamoContainerUtils.DynamoConfig config =
         DynamoContainerUtils.DynamoConfig.builder()
-            .accessKey("dummy")
-            .secretKey("dummy")
+            .accessKey(DEFAULT_ACCESS_KEY)
+            .secretKey(DEFAULT_SECRET_KEY)
             .endpoint(endpoint)
-            .region("us-east-1")
+            .region(Region.US_EAST_1.toString())
             .build();
 
     dynamoContainerUtils.initializeTestEnvironment(config);

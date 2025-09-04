@@ -1,14 +1,18 @@
 package com.dream11.shardwizard.example.runs;
 
+import static com.dream11.shardwizard.example.StandardIntegrationTestSetup.setupPostgresContainers;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.dream11.shardwizard.example.BaseShardTest;
+import com.dream11.shardwizard.constant.RouterType;
+import com.dream11.shardwizard.example.MainModule;
+import com.dream11.shardwizard.example.ShardTestSupport;
 import com.dream11.shardwizard.example.order.OrderDao;
 import com.dream11.shardwizard.example.order.OrderDaoFactory;
 import com.dream11.shardwizard.example.order.impl.PostgresOrderDaoImpl;
 import com.dream11.shardwizard.example.utils.AppContext;
-import com.dream11.shardwizard.router.impl.ConsistentHashingRouter;
+import com.dream11.shardwizard.router.ShardRouter;
+import com.dream11.shardwizard.router.ShardRouterFactory;
 import io.vertx.reactivex.core.Vertx;
 import java.util.HashMap;
 import java.util.List;
@@ -20,60 +24,93 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 @Slf4j
-public class OrderDaoFactoryTest extends BaseShardTest {
+public class OrderDaoFactoryTest extends ShardTestSupport {
 
   private static Vertx vertx;
-  private static final int MYSQL_SHARD_ID = 4;
   private static final int POSTGRES_SHARD_ID = 3;
   private static OrderDaoFactory orderDaoFactory;
 
   @BeforeAll
   public static void setUp() throws Exception {
     log.info("Starting test setup");
+    System.setProperty("app.environment", "test");
     CountDownLatch latch = new CountDownLatch(1);
-    vertx = Vertx.vertx();
-    setupBase();
+    AtomicReference<Throwable> error = new AtomicReference<>();
 
-    vertx.runOnContext(
-        v -> {
-          try {
-            // Get the already initialized OrderDaoFactory
-            orderDaoFactory = AppContext.getInstance(OrderDaoFactory.class);
-            // Bootstrap the factory in a non-blocking way
-            orderDaoFactory
-                .rxBootstrap()
-                .doOnComplete(
-                    () -> {
-                      log.info("OrderDaoFactory bootstrapped successfully");
-                      latch.countDown();
-                    })
-                .doOnError(
-                    error -> {
-                      log.error("Failed to bootstrap OrderDaoFactory", error);
-                      latch.countDown();
-                    })
-                .subscribe();
-          } catch (Exception e) {
-            log.error("Error during setup", e);
-            latch.countDown();
-          }
-        });
-    latch.await();
+    try {
+      log.info("Starting base test setup");
 
-    if (vertx == null) {
-      throw new IllegalStateException("Vertx instance is null after setup");
+      vertx = Vertx.vertx();
+      log.info("Vertx instance initialized successfully");
+
+      setupPostgresContainers();
+      log.info("Standard integration test setup completed");
+
+      vertx.runOnContext(
+          v -> {
+            try {
+              log.info("Initializing AppContext");
+              AppContext.initialize(new MainModule());
+              log.info("AppContext initialized successfully");
+
+              log.info("Getting OrderDaoFactory instance from AppContext");
+              orderDaoFactory = AppContext.getInstance(OrderDaoFactory.class);
+
+              if (orderDaoFactory == null) {
+                String errorMsg =
+                    "Failed to get OrderDaoFactory instance from AppContext - getInstance returned null";
+                log.error(errorMsg);
+                error.set(new IllegalStateException(errorMsg));
+                latch.countDown();
+                return;
+              }
+
+              log.info("OrderDaoFactory instance obtained successfully, starting bootstrap");
+              orderDaoFactory
+                  .rxBootstrap()
+                  .doOnSubscribe(d -> log.info("Bootstrap subscription started"))
+                  .doOnComplete(
+                      () -> {
+                        log.info("OrderDaoFactory bootstrapped successfully");
+                        latch.countDown();
+                      })
+                  .doOnError(
+                      e -> {
+                        log.error(
+                            "Failed to bootstrap OrderDaoFactory due to ==> {} ", e.getMessage());
+                        error.set(e);
+                        latch.countDown();
+                      })
+                  .subscribe();
+            } catch (Exception e) {
+              log.error("Error during setup within Vertx context", e);
+              error.set(e);
+              latch.countDown();
+            }
+          });
+
+      log.info("Waiting for setup completion");
+      awaitAndHandleError(latch, error, "Failed to setup test environment");
+
+      if (orderDaoFactory == null) {
+        throw new IllegalStateException(
+            "OrderDaoFactory is null after setup completion - initialization failed");
+      }
+
+      log.info("Test environment setup completed successfully with initialized OrderDaoFactory");
+    } catch (Exception e) {
+      log.error("Critical error during test setup", e);
+      if (orderDaoFactory == null) {
+        log.error("OrderDaoFactory is null after error");
+      }
+      throw e;
     }
-    if (orderDaoFactory == null) {
-      throw new IllegalStateException("OrderDaoFactory is null after setup");
-    }
-
-    log.info("Test setup completed successfully");
   }
 
   @Test
   /**
    * Test that verifies the correct DAO implementation is returned based on the entity ID Should
-   * return PostgresOrderDaoImpl for one entity ID and MySqlOrderDaoImpl for another
+   * return PostgresOrderDaoImpl for one entity ID and MysqlOrderDaoImpl for another
    */
   void shouldReturnCorrectDaoImplementation() throws Exception {
     runDaoImplementationTest("1234", 1111, "1234", 2222);
@@ -99,11 +136,30 @@ public class OrderDaoFactoryTest extends BaseShardTest {
 
   @Test
   /**
+   * Test that verifies the modulo router distributes requests evenly across shards Should
+   * distribute requests evenly across 3 shards with a small tolerance for imbalance
+   */
+  void shouldDistributeRequestsEvenlyAcrossThreeShardsWithModuloRouter() {
+    runDistributionTest(RouterType.MODULO, List.of(1L, 2L, 3L), 1_000_000, 0.05);
+  }
+
+  @Test
+  /**
+   * Test that verifies the modulo router distributes requests evenly across many shards Should
+   * distribute requests evenly across 11 shards with a reasonable tolerance for imbalance
+   */
+  void shouldDistributeRequestsEvenlyAcrossManyShardsWithModuloRouter() {
+    runDistributionTest(
+        RouterType.MODULO, List.of(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L), 1_000_000, 0.05);
+  }
+
+  @Test
+  /**
    * Test that verifies the consistent hashing router distributes requests evenly across shards
    * Should distribute requests evenly across 3 shards with a small tolerance for imbalance
    */
-  void shouldDistributeRequestsEvenlyAcrossThreeShards() {
-    runDistributionTest(List.of(1L, 2L, 3L), 1_000_000, 0.05);
+  void shouldDistributeRequestsEvenlyAcrossThreeShardsWithConsistentRouter() {
+    runDistributionTest(RouterType.CONSISTENT, List.of(1L, 2L, 3L), 1_000_000, 0.05);
   }
 
   @Test
@@ -111,8 +167,12 @@ public class OrderDaoFactoryTest extends BaseShardTest {
    * Test that verifies the consistent hashing router distributes requests evenly across many shards
    * Should distribute requests evenly across 11 shards with a reasonable tolerance for imbalance
    */
-  void shouldDistributeRequestsEvenlyAcrossManyShards() {
-    runDistributionTest(List.of(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L), 1_000_000, 0.05);
+  void shouldDistributeRequestsEvenlyAcrossManyShardsWithConsistentRouter() {
+    runDistributionTest(
+        RouterType.CONSISTENT,
+        List.of(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L),
+        1_000_000,
+        0.05);
   }
 
   @Test
@@ -311,8 +371,16 @@ public class OrderDaoFactoryTest extends BaseShardTest {
   }
 
   private void runDistributionTest(
-      List<Long> activeShardIds, int totalRequests, double tolerancePercentage) {
-    ConsistentHashingRouter shardRouter = new ConsistentHashingRouter();
+      RouterType routerType,
+      List<Long> activeShardIds,
+      int totalRequests,
+      double tolerancePercentage) {
+    log.info(
+        "Testing distribution for router type: {} with {} shards",
+        routerType,
+        activeShardIds.size());
+
+    ShardRouter shardRouter = ShardRouterFactory.createRouter(routerType);
     shardRouter.initialize(activeShardIds);
 
     Map<Long, Integer> shardCounters = new HashMap<>();
@@ -322,7 +390,7 @@ public class OrderDaoFactoryTest extends BaseShardTest {
 
     // Route requests
     for (int i = 0; i < totalRequests; i++) {
-      String routeKey = "user-" + i;
+      String routeKey = routerType == RouterType.MODULO ? String.valueOf(i) : "user-" + i;
       long shardId = shardRouter.getRoutedShardId(routeKey);
       shardCounters.put(shardId, shardCounters.getOrDefault(shardId, 0) + 1);
     }
@@ -331,16 +399,24 @@ public class OrderDaoFactoryTest extends BaseShardTest {
     int averageCount = totalRequests / activeShardIds.size();
     int tolerance = (int) (averageCount * tolerancePercentage);
 
+    log.info("Distribution results for {} router:", routerType);
     for (long shardId : activeShardIds) {
       int count = shardCounters.get(shardId);
-      double deviation = Math.abs(count - averageCount);
-      double deviationPercentage = (deviation / averageCount) * 100;
+      double deviationPercentage = Math.abs((count - averageCount) * 100.0 / averageCount);
+      log.info(
+          "  Shard {}: {} requests ({:.2f}% of average)",
+          shardId, count, (count * 100.0 / averageCount));
 
       assertTrue(
-          deviation <= tolerance,
+          Math.abs(count - averageCount) <= tolerance,
           String.format(
-              "Shard %d has an imbalance: count=%d, average=%d, deviation=%.2f%%",
-              shardId, count, averageCount, deviationPercentage));
+              "Shard %d has an imbalance with %s router: count=%d, average=%d, deviation=%.2f%%, tolerance=%.2f%%",
+              shardId,
+              routerType,
+              count,
+              averageCount,
+              deviationPercentage,
+              tolerancePercentage * 100));
     }
 
     // Verify all requests were routed
@@ -348,6 +424,8 @@ public class OrderDaoFactoryTest extends BaseShardTest {
     assertEquals(
         totalRequests,
         totalRoutedRequests,
-        "Total routed requests should match total input requests");
+        "Total routed requests should match total input requests for " + routerType + " router");
+
+    log.info("Distribution test passed for {} router", routerType);
   }
 }

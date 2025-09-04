@@ -1,19 +1,19 @@
 package com.dream11.shardwizard.dao;
 
 import static com.dream11.shardwizard.constant.Constants.REFRESH_SHARDS_TIMEOUT_SECONDS;
-import static com.dream11.shardwizard.constant.Constants.SHARD_MANAGER_CONFIG_FOLDER;
 
 import com.dream11.shardwizard.config.ShardManagerConfig;
+import com.dream11.shardwizard.constant.DatabaseType;
 import com.dream11.shardwizard.exception.DatabaseTypeNotFoundException;
 import com.dream11.shardwizard.exception.ShardNotPresentException;
 import com.dream11.shardwizard.model.EntityShardDetailsMapping;
 import com.dream11.shardwizard.model.ShardConnectionParameters;
 import com.dream11.shardwizard.model.ShardDetails;
 import com.dream11.shardwizard.router.ShardRouter;
-import com.dream11.shardwizard.router.impl.ModuloRouter;
+import com.dream11.shardwizard.router.ShardRouterFactory;
 import com.dream11.shardwizard.shardmanager.ShardManagerClient;
 import com.dream11.shardwizard.utils.CompletableFutureUtils;
-import com.dream11.shardwizard.utils.ConfigUtils;
+import com.dream11.shardwizard.utils.ShardManagerConfigLoader;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.typesafe.config.ConfigBeanFactory;
@@ -31,6 +31,8 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.NonNull;
@@ -49,14 +51,36 @@ public abstract class AbstractDaoFactory<T> implements DaoFactory<T> {
   private long timerId;
   protected ShardManagerConfig shardManagerConfig;
 
+  private final ScheduledExecutorService executorService;
+
+  /**
+   * Legacy constructor for backward compatibility. Uses intelligent fallback to determine
+   * DatabaseType from system properties or default.conf.
+   *
+   * @param vertx Vertx instance
+   * @deprecated Use {@link #AbstractDaoFactory(Vertx, DatabaseType)} for explicit DatabaseType
+   *     control
+   */
   protected AbstractDaoFactory(Vertx vertx) {
+    this(vertx, ShardManagerConfigLoader.resolveDatabaseType(null));
+  }
+
+  /**
+   * Constructor with explicit DatabaseType for better control and testing.
+   *
+   * @param vertx Vertx instance
+   * @param sourceType The database type to use for configuration loading
+   */
+  protected AbstractDaoFactory(Vertx vertx, DatabaseType sourceType) {
     this.vertx = vertx;
-    this.shardManagerConfig =
-        ConfigUtils.fromConfigFile(
-            "config/" + SHARD_MANAGER_CONFIG_FOLDER + "/%s.conf", ShardManagerConfig.class);
+
+    // Use centralized config loader with fallback
+    this.shardManagerConfig = ShardManagerConfigLoader.loadConfigWithFallback(sourceType);
+
     this.shardIdToDaoCache = new ConcurrentHashMap<>();
     this.entityIdToShardMappingCache = new ConcurrentHashMap<>();
-    this.shardManagerClient = ShardManagerClient.create(vertx);
+    this.shardManagerClient = ShardManagerClient.create(vertx, shardManagerConfig);
+    this.executorService = Executors.newSingleThreadScheduledExecutor();
     this.entityToShardRouterCache = new ConcurrentHashMap<>();
   }
 
@@ -66,7 +90,7 @@ public abstract class AbstractDaoFactory<T> implements DaoFactory<T> {
   protected abstract long getShardIdFromPrimaryKey(String primaryKey);
 
   protected ShardRouter getShardRouter() {
-    return new ModuloRouter();
+    return ShardRouterFactory.createRouter(shardManagerConfig.getRouterType());
   }
 
   private Single<T> rxGetAndConnectDaoInstance(ShardDetails shardDetails) {
@@ -80,15 +104,17 @@ public abstract class AbstractDaoFactory<T> implements DaoFactory<T> {
   }
 
   private ShardConnectionParameters mergeConfigs(
-      ShardConnectionParameters pojo1,
-      ShardConnectionParameters pojo2,
+      ShardConnectionParameters connectionParamsFromDB,
+      ShardConnectionParameters defaultConnectionParams,
       Class<ShardConnectionParameters> kclass) {
     try {
       ObjectMapper objectMapper =
           new ObjectMapper().setSerializationInclusion(JsonInclude.Include.NON_NULL);
       return ConfigBeanFactory.create(
-          ConfigFactory.parseString(objectMapper.writeValueAsString(pojo1))
-              .withFallback(ConfigFactory.parseString(objectMapper.writeValueAsString(pojo2)))
+          ConfigFactory.parseString(objectMapper.writeValueAsString(connectionParamsFromDB))
+              .withFallback(
+                  ConfigFactory.parseString(
+                      objectMapper.writeValueAsString(defaultConnectionParams)))
               .resolve(),
           kclass);
     } catch (IOException e) {
@@ -276,20 +302,11 @@ public abstract class AbstractDaoFactory<T> implements DaoFactory<T> {
   }
 
   private void schedulePeriodicShardsRefresh(ShardManagerClient shardManagerClient) {
-    long initialDelay = 10L * 1000; // 10 seconds in milliseconds
-    long interval = shardManagerConfig.getShardsRefreshSeconds() * 1000L; // convert to milliseconds
-    timerId =
-        vertx.setPeriodic(
-            interval,
-            id -> {
-              try {
-                refreshCaches(shardManagerClient);
-              } catch (Exception e) {
-                log.error("Error in periodic shard refresh", e);
-              }
-            });
-    // Schedule first run after initial delay
-    vertx.setTimer(initialDelay, id -> refreshCaches(shardManagerClient));
+    executorService.scheduleAtFixedRate(
+        () -> refreshCaches(shardManagerClient),
+        10,
+        shardManagerConfig.getShardsRefreshSeconds(),
+        TimeUnit.SECONDS);
   }
 
   private void refreshCaches(ShardManagerClient shardManagerClient) {

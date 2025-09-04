@@ -1,6 +1,8 @@
 package com.dream11.shardwizard.example;
 
-import static com.dream11.shardwizard.example.helpers.Constants.TABLE_NAME;
+import static com.dream11.shardwizard.example.ShardTestSupport.DEFAULT_ACCESS_KEY;
+import static com.dream11.shardwizard.example.ShardTestSupport.DEFAULT_SECRET_KEY;
+import static com.dream11.shardwizard.example.utils.Constants.TABLE_NAME;
 import static com.dream11.shardwizard.example.utils.DynamoContainerUtils.defaultThroughput;
 
 import com.dream11.shardwizard.example.containers.DynamoContainer;
@@ -12,6 +14,7 @@ import com.dream11.shardwizard.example.utils.DynamoContainerUtils;
 import com.dream11.shardwizard.example.utils.S3ContainerUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 import lombok.extern.slf4j.Slf4j;
 import org.testcontainers.containers.GenericContainer;
@@ -30,20 +33,6 @@ public class StandardIntegrationTestSetup {
 
   public static void setup() throws Exception {
     log.info("Setting up test environment");
-    ObjectMapper mapper = new ObjectMapper();
-
-    postgresConfig =
-        mapper.readValue(
-            new File("src/test/resources/sql/postgres/postgres-shard-setup.json"),
-            DBShardConfigDTO.class);
-    mysqlConfig =
-        mapper.readValue(
-            new File("src/test/resources/sql/mysql/mysql-shard-setup.json"),
-            DBShardConfigDTO.class);
-
-    dynamoConfig =
-        mapper.readValue(
-            new File("src/test/resources/dynamo/dynamo-shard-setup.json"), DBShardConfigDTO.class);
     setupPostgresContainers();
     setupMysqlContainers();
     setupS3Environment();
@@ -51,8 +40,14 @@ public class StandardIntegrationTestSetup {
     log.info("Test environment setup completed");
   }
 
-  private static void setupPostgresContainers() {
+  public static void setupPostgresContainers() throws IOException {
     log.info("Setting up Postgres containers");
+
+    ObjectMapper mapper = new ObjectMapper();
+    postgresConfig =
+        mapper.readValue(
+            new File("src/test/resources/sql/postgres/postgres-shard-setup.json"),
+            DBShardConfigDTO.class);
 
     PostgresqlContainer.create(
         postgresConfig.getUserName(),
@@ -72,8 +67,15 @@ public class StandardIntegrationTestSetup {
     }
   }
 
-  private static void setupMysqlContainers() {
+  public static void setupMysqlContainers() throws IOException {
     log.info("Setting up MySQL containers");
+
+    ObjectMapper mapper = new ObjectMapper();
+
+    mysqlConfig =
+        mapper.readValue(
+            new File("src/test/resources/sql/mysql/mysql-shard-setup.json"),
+            DBShardConfigDTO.class);
 
     MysqlContainer.create(
         mysqlConfig.getUserName(),
@@ -93,17 +95,24 @@ public class StandardIntegrationTestSetup {
     }
   }
 
-  private static void setupDynamoContainers() throws Exception {
+  public static void setupDynamoContainers() throws Exception {
+
+    ObjectMapper mapper = new ObjectMapper();
+
+    dynamoConfig =
+        mapper.readValue(
+            new File("src/test/resources/dynamo/dynamo-shard-setup.json"), DBShardConfigDTO.class);
+
     GenericContainer<?> dynamoContainer =
         DynamoContainer.create(dynamoConfig.getShardManager().getPort());
     String endpoint = DynamoContainer.getEndpoint(dynamoContainer, 8000);
     DynamoContainerUtils dynamoContainerUtils = new DynamoContainerUtils();
     DynamoContainerUtils.DynamoConfig config =
         DynamoContainerUtils.DynamoConfig.builder()
-            .accessKey("dummy")
-            .secretKey("dummy")
+            .accessKey(DEFAULT_ACCESS_KEY)
+            .secretKey(DEFAULT_SECRET_KEY)
             .endpoint(endpoint)
-            .region("us-east-1")
+            .region(Region.US_EAST_1.toString())
             .build();
     dynamoContainerUtils.initializeTestEnvironment(config);
 
@@ -116,7 +125,8 @@ public class StandardIntegrationTestSetup {
               .endpointOverride(URI.create(shardEndpoint))
               .region(Region.US_EAST_1)
               .credentialsProvider(
-                  StaticCredentialsProvider.create(AwsBasicCredentials.create("dummy", "dummy")))
+                  StaticCredentialsProvider.create(
+                      AwsBasicCredentials.create(DEFAULT_ACCESS_KEY, DEFAULT_SECRET_KEY)))
               .build();
 
       // Create Orders Table in each shard

@@ -3,7 +3,7 @@ package com.dream11.shardwizard.example.order;
 import com.dream11.shardwizard.constant.DatabaseType;
 import com.dream11.shardwizard.dao.AbstractDaoFactory;
 import com.dream11.shardwizard.example.order.impl.DynamoOrderDaoImpl;
-import com.dream11.shardwizard.example.order.impl.MySqlOrderDaoImpl;
+import com.dream11.shardwizard.example.order.impl.MysqlOrderDaoImpl;
 import com.dream11.shardwizard.example.order.impl.PostgresOrderDaoImpl;
 import com.dream11.shardwizard.model.ShardDetails;
 import io.vertx.reactivex.core.Vertx;
@@ -11,8 +11,25 @@ import lombok.NonNull;
 
 public class OrderDaoFactory extends AbstractDaoFactory<OrderDao> {
 
+  /**
+   * Legacy constructor for backward compatibility. Uses intelligent fallback to determine
+   * DatabaseType from system properties or default.conf.
+   *
+   * @param vertx Vertx instance
+   * @deprecated Use {@link #OrderDaoFactory(Vertx, DatabaseType)} for explicit DatabaseType control
+   */
   public OrderDaoFactory(Vertx vertx) {
     super(vertx);
+  }
+
+  /**
+   * Constructor with explicit DatabaseType for better control and testing.
+   *
+   * @param vertx Vertx instance
+   * @param sourceType The database type to use for configuration loading
+   */
+  public OrderDaoFactory(Vertx vertx, DatabaseType sourceType) {
+    super(vertx, sourceType);
   }
 
   @Override
@@ -21,7 +38,7 @@ public class OrderDaoFactory extends AbstractDaoFactory<OrderDao> {
     DatabaseType databaseType = shardDetails.getShardConfig().getDatabaseType();
     switch (databaseType) {
       case MYSQL:
-        return new MySqlOrderDaoImpl(vertx, shardDetails);
+        return new MysqlOrderDaoImpl(vertx, shardDetails);
       case POSTGRES:
         return new PostgresOrderDaoImpl(vertx, shardDetails);
       case DYNAMO:

@@ -458,8 +458,8 @@
         <extensions>true</extensions>
         <configuration>
           <publishingServerId>central</publishingServerId>
-          <autoPublish>false
-          </autoPublish> <!-- TODO: Change to true for auto publishing to maven central -->
+          <autoPublish>true
+          </autoPublish>
         </configuration>
       </plugin>
 

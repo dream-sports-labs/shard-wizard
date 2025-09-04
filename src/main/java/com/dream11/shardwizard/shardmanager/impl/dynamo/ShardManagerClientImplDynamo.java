@@ -1,5 +1,15 @@
 package com.dream11.shardwizard.shardmanager.impl.dynamo;
 
+import static com.dream11.shardwizard.config.DynamoConfig.DEFAULT_API_CALL_ATTEMPT_TIMEOUT_MS;
+import static com.dream11.shardwizard.config.DynamoConfig.DEFAULT_API_CALL_TIMEOUT_MS;
+import static com.dream11.shardwizard.config.DynamoConfig.DEFAULT_CONNECTION_ACQUISITION_TIMEOUT_MS;
+import static com.dream11.shardwizard.config.DynamoConfig.DEFAULT_CONNECTION_MAX_IDLE_TIME_MS;
+import static com.dream11.shardwizard.config.DynamoConfig.DEFAULT_CONNECTION_TIMEOUT_MS;
+import static com.dream11.shardwizard.config.DynamoConfig.DEFAULT_CONSISTENT_READ;
+import static com.dream11.shardwizard.config.DynamoConfig.DEFAULT_KEEP_ALIVE_INTERVAL_MS;
+import static com.dream11.shardwizard.config.DynamoConfig.DEFAULT_KEEP_ALIVE_TIMEOUT_MS;
+import static com.dream11.shardwizard.config.DynamoConfig.DEFAULT_MAX_CONCURRENCY;
+
 import com.dream11.shardwizard.config.DynamoConfig;
 import com.dream11.shardwizard.constant.DatabaseType;
 import com.dream11.shardwizard.exception.DefaultShardNotFoundException;
@@ -14,6 +24,7 @@ import com.dream11.shardwizard.shardmanager.ShardManagerClient;
 import io.reactivex.Completable;
 import io.reactivex.Single;
 import java.net.URI;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,7 +35,9 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.http.crt.AwsCrtAsyncHttpClient;
+import software.amazon.awssdk.http.crt.TcpKeepAliveConfiguration;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClientBuilder;
@@ -70,18 +83,57 @@ public class ShardManagerClientImplDynamo implements ShardManagerClient {
   public static final String DATABASE = "database";
   public static final String ACCESS_KEY = "accessKey";
   public static final String SECRET_KEY = "secretKey";
-  public static final String TABLE_CONNECTION_MAP = "tableConnectionMap";
   public static final String DATABASE_TYPE = "databaseType";
   public static final String ENDPOINT = "endpoint";
   public static final String REGION = "region";
   public static final String SHARD_CONNECTION_PARAMS = "shardConnectionParams";
 
+  // DynamoDB HTTP client configuration parameter keys
+  public static final String DYNAMO_CONNECTION_TIMEOUT_MS = "dynamoConnectionTimeoutMs";
+  public static final String DYNAMO_CONNECTION_MAX_IDLE_TIME_MS = "dynamoConnectionMaxIdleTimeMs";
+  public static final String DYNAMO_MAX_CONCURRENCY = "dynamoMaxConcurrency";
+  public static final String DYNAMO_KEEP_ALIVE_INTERVAL_MS = "dynamoKeepAliveIntervalMs";
+  public static final String DYNAMO_KEEP_ALIVE_TIMEOUT_MS = "dynamoKeepAliveTimeoutMs";
+
+  // DynamoDB timeout configuration parameter keys
+  public static final String DYNAMO_API_CALL_TIMEOUT_MS = "dynamoApiCallTimeoutMs";
+  public static final String DYNAMO_API_CALL_ATTEMPT_TIMEOUT_MS = "dynamoApiCallAttemptTimeoutMs";
+
+  // DynamoDB advanced HTTP client configuration parameter keys
+  public static final String DYNAMO_CONNECTION_ACQUISITION_TIMEOUT_MS =
+      "dynamoConnectionAcquisitionTimeoutMs";
+
+  // DynamoDB read configuration parameter keys
+  public static final String DYNAMO_CONSISTENT_READ = "dynamoConsistentRead";
+
   public ShardManagerClientImplDynamo(DynamoConfig dynamoConfig) {
+
+    // Build client override configuration with basic timeout settings
+    ClientOverrideConfiguration overrideConfig =
+        ClientOverrideConfiguration.builder()
+            .apiCallTimeout(Duration.ofMillis(dynamoConfig.getApiCallTimeoutMs()))
+            .apiCallAttemptTimeout(Duration.ofMillis(dynamoConfig.getApiCallAttemptTimeoutMs()))
+            .build();
+
+    // Build HTTP client with available configuration options
+    AwsCrtAsyncHttpClient.Builder httpClientBuilder =
+        AwsCrtAsyncHttpClient.builder()
+            .connectionTimeout(Duration.ofMillis(dynamoConfig.getConnectionTimeoutMs()))
+            .connectionMaxIdleTime(Duration.ofMillis(dynamoConfig.getConnectionMaxIdleTimeMs()))
+            .maxConcurrency(dynamoConfig.getMaxConcurrency())
+            .connectionAcquisitionTimeout(
+                Duration.ofMillis(dynamoConfig.getConnectionAcquisitionTimeoutMs()))
+            .tcpKeepAliveConfiguration(
+                TcpKeepAliveConfiguration.builder()
+                    .keepAliveInterval(Duration.ofMillis(dynamoConfig.getKeepAliveIntervalMs()))
+                    .keepAliveTimeout(Duration.ofMillis(dynamoConfig.getKeepAliveTimeoutMs()))
+                    .build());
 
     DynamoDbAsyncClientBuilder builder =
         DynamoDbAsyncClient.builder()
-            .httpClientBuilder(AwsCrtAsyncHttpClient.builder())
-            .region(Region.of(dynamoConfig.getRegion()));
+            .region(Region.of(dynamoConfig.getRegion()))
+            .overrideConfiguration(overrideConfig)
+            .httpClientBuilder(httpClientBuilder);
 
     configureCredentials(dynamoConfig, builder);
 
@@ -146,24 +198,6 @@ public class ShardManagerClientImplDynamo implements ShardManagerClient {
     shardConnectionMap.put(DATABASE, AttributeValue.builder().s(params.getDatabase()).build());
     shardConnectionMap.put(ACCESS_KEY, AttributeValue.builder().s(params.getAccessKey()).build());
     shardConnectionMap.put(SECRET_KEY, AttributeValue.builder().s(params.getSecretKey()).build());
-
-    // tableConnectionMap (nested map)
-    Map<String, AttributeValue> tableConnectionMapAttr = new HashMap<>();
-
-    for (Map.Entry<String, Object> entry : params.getTableConnectionMap().entrySet()) {
-      ShardConnectionParameters.TableConnectionInfo infoObj =
-          (ShardConnectionParameters.TableConnectionInfo) entry.getValue();
-
-      Map<String, AttributeValue> info =
-          Map.of(
-              ENDPOINT, AttributeValue.builder().s(infoObj.getEndpoint()).build(),
-              REGION, AttributeValue.builder().s(infoObj.getRegion()).build());
-
-      tableConnectionMapAttr.put(entry.getKey(), AttributeValue.builder().m(info).build());
-    }
-
-    shardConnectionMap.put(
-        TABLE_CONNECTION_MAP, AttributeValue.builder().m(tableConnectionMapAttr).build());
 
     Map<String, AttributeValue> detailsMap =
         Map.of(
@@ -328,8 +362,8 @@ public class ShardManagerClientImplDynamo implements ShardManagerClient {
                         item -> {
                           long shardId = Long.parseLong(item.get(SHARD_ID).n());
                           Map<String, AttributeValue> detailsMap = item.get(DETAILS).m();
-                          ShardConfig config =
-                              parseShardConfig(detailsMap); // You should already have this
+                          ShardConfig config = parseShardConfig(detailsMap); // You should already
+                          // have this
                           return new ShardDetails(shardId, config);
                         })
                     .collect(Collectors.toList()));
@@ -466,26 +500,50 @@ public class ShardManagerClientImplDynamo implements ShardManagerClient {
             .accessKey(
                 shardConnMap.getOrDefault(ACCESS_KEY, AttributeValue.builder().s("").build()).s())
             .secretKey(
-                shardConnMap.getOrDefault(SECRET_KEY, AttributeValue.builder().s("").build()).s());
-
-    // Handle tableConnectionMap
-    Map<String, AttributeValue> rawTableMap =
-        shardConnMap
-            .getOrDefault(TABLE_CONNECTION_MAP, AttributeValue.builder().m(Map.of()).build())
-            .m();
-    Map<String, ShardConnectionParameters.TableConnectionInfo> tableConnectionMap = new HashMap<>();
-
-    for (Map.Entry<String, AttributeValue> entry : rawTableMap.entrySet()) {
-      Map<String, AttributeValue> valueMap = entry.getValue().m();
-      String endpoint = valueMap.getOrDefault(ENDPOINT, AttributeValue.builder().s("").build()).s();
-      String region = valueMap.getOrDefault(REGION, AttributeValue.builder().s("").build()).s();
-      tableConnectionMap.put(
-          entry.getKey(), new ShardConnectionParameters.TableConnectionInfo(endpoint, region));
-    }
-
-    connBuilder.tableConnectionMap(
-        (Map) tableConnectionMap); // Cast required if tableConnectionMap is typed as Map<String,
-    // Object>
+                shardConnMap.getOrDefault(SECRET_KEY, AttributeValue.builder().s("").build()).s())
+            .endpoint(
+                shardConnMap.getOrDefault(ENDPOINT, AttributeValue.builder().s(null).build()).s())
+            .region(shardConnMap.getOrDefault(REGION, AttributeValue.builder().s(null).build()).s())
+            // DynamoDB HTTP client configuration (with defaults if not specified)
+            .dynamoConnectionTimeoutMs(
+                shardConnMap.containsKey(DYNAMO_CONNECTION_TIMEOUT_MS)
+                    ? Integer.parseInt(shardConnMap.get(DYNAMO_CONNECTION_TIMEOUT_MS).n())
+                    : DEFAULT_CONNECTION_TIMEOUT_MS)
+            .dynamoConnectionMaxIdleTimeMs(
+                shardConnMap.containsKey(DYNAMO_CONNECTION_MAX_IDLE_TIME_MS)
+                    ? Integer.parseInt(shardConnMap.get(DYNAMO_CONNECTION_MAX_IDLE_TIME_MS).n())
+                    : DEFAULT_CONNECTION_MAX_IDLE_TIME_MS)
+            .dynamoMaxConcurrency(
+                shardConnMap.containsKey(DYNAMO_MAX_CONCURRENCY)
+                    ? Integer.parseInt(shardConnMap.get(DYNAMO_MAX_CONCURRENCY).n())
+                    : DEFAULT_MAX_CONCURRENCY)
+            .dynamoKeepAliveIntervalMs(
+                shardConnMap.containsKey(DYNAMO_KEEP_ALIVE_INTERVAL_MS)
+                    ? Integer.parseInt(shardConnMap.get(DYNAMO_KEEP_ALIVE_INTERVAL_MS).n())
+                    : DEFAULT_KEEP_ALIVE_INTERVAL_MS)
+            .dynamoKeepAliveTimeoutMs(
+                shardConnMap.containsKey(DYNAMO_KEEP_ALIVE_TIMEOUT_MS)
+                    ? Integer.parseInt(shardConnMap.get(DYNAMO_KEEP_ALIVE_TIMEOUT_MS).n())
+                    : DEFAULT_KEEP_ALIVE_TIMEOUT_MS)
+            // DynamoDB timeout configuration (with defaults if not specified)
+            .dynamoApiCallTimeoutMs(
+                shardConnMap.containsKey(DYNAMO_API_CALL_TIMEOUT_MS)
+                    ? Long.parseLong(shardConnMap.get(DYNAMO_API_CALL_TIMEOUT_MS).n())
+                    : DEFAULT_API_CALL_TIMEOUT_MS)
+            .dynamoApiCallAttemptTimeoutMs(
+                shardConnMap.containsKey(DYNAMO_API_CALL_ATTEMPT_TIMEOUT_MS)
+                    ? Long.parseLong(shardConnMap.get(DYNAMO_API_CALL_ATTEMPT_TIMEOUT_MS).n())
+                    : DEFAULT_API_CALL_ATTEMPT_TIMEOUT_MS)
+            // DynamoDB advanced HTTP client configuration (with defaults if not specified)
+            .dynamoConnectionAcquisitionTimeoutMs(
+                shardConnMap.containsKey(DYNAMO_CONNECTION_ACQUISITION_TIMEOUT_MS)
+                    ? Long.parseLong(shardConnMap.get(DYNAMO_CONNECTION_ACQUISITION_TIMEOUT_MS).n())
+                    : DEFAULT_CONNECTION_ACQUISITION_TIMEOUT_MS)
+            // DynamoDB read configuration (with defaults if not specified)
+            .dynamoConsistentRead(
+                shardConnMap.containsKey(DYNAMO_CONSISTENT_READ)
+                    ? shardConnMap.get(DYNAMO_CONSISTENT_READ).bool()
+                    : DEFAULT_CONSISTENT_READ);
 
     return ShardConfig.builder()
         .databaseType(DatabaseType.valueOf(databaseTypeStr))
@@ -613,20 +671,67 @@ public class ShardManagerClientImplDynamo implements ShardManagerClient {
       shardConnectionMap.put(SECRET_KEY, AttributeValue.builder().s(params.getSecretKey()).build());
     }
 
-    // Handle tableConnectionMap
-    if (params.getTableConnectionMap() != null && !params.getTableConnectionMap().isEmpty()) {
-      Map<String, AttributeValue> tableConnectionMapAttr = new HashMap<>();
-      for (Map.Entry<String, Object> entry : params.getTableConnectionMap().entrySet()) {
-        ShardConnectionParameters.TableConnectionInfo info =
-            (ShardConnectionParameters.TableConnectionInfo) entry.getValue();
-        Map<String, AttributeValue> infoMap =
-            Map.of(
-                ENDPOINT, AttributeValue.builder().s(info.getEndpoint()).build(),
-                REGION, AttributeValue.builder().s(info.getRegion()).build());
-        tableConnectionMapAttr.put(entry.getKey(), AttributeValue.builder().m(infoMap).build());
-      }
+    // Add DynamoDB HTTP client configuration if present
+    if (params.getDynamoConnectionTimeoutMs() != null) {
       shardConnectionMap.put(
-          TABLE_CONNECTION_MAP, AttributeValue.builder().m(tableConnectionMapAttr).build());
+          DYNAMO_CONNECTION_TIMEOUT_MS,
+          AttributeValue.builder()
+              .n(String.valueOf(params.getDynamoConnectionTimeoutMs()))
+              .build());
+    }
+    if (params.getDynamoConnectionMaxIdleTimeMs() != null) {
+      shardConnectionMap.put(
+          DYNAMO_CONNECTION_MAX_IDLE_TIME_MS,
+          AttributeValue.builder()
+              .n(String.valueOf(params.getDynamoConnectionMaxIdleTimeMs()))
+              .build());
+    }
+    if (params.getDynamoMaxConcurrency() != null) {
+      shardConnectionMap.put(
+          DYNAMO_MAX_CONCURRENCY,
+          AttributeValue.builder().n(String.valueOf(params.getDynamoMaxConcurrency())).build());
+    }
+    if (params.getDynamoKeepAliveIntervalMs() != null) {
+      shardConnectionMap.put(
+          DYNAMO_KEEP_ALIVE_INTERVAL_MS,
+          AttributeValue.builder()
+              .n(String.valueOf(params.getDynamoKeepAliveIntervalMs()))
+              .build());
+    }
+    if (params.getDynamoKeepAliveTimeoutMs() != null) {
+      shardConnectionMap.put(
+          DYNAMO_KEEP_ALIVE_TIMEOUT_MS,
+          AttributeValue.builder().n(String.valueOf(params.getDynamoKeepAliveTimeoutMs())).build());
+    }
+
+    // Add DynamoDB timeout configuration if present
+    if (params.getDynamoApiCallTimeoutMs() != null) {
+      shardConnectionMap.put(
+          DYNAMO_API_CALL_TIMEOUT_MS,
+          AttributeValue.builder().n(String.valueOf(params.getDynamoApiCallTimeoutMs())).build());
+    }
+    if (params.getDynamoApiCallAttemptTimeoutMs() != null) {
+      shardConnectionMap.put(
+          DYNAMO_API_CALL_ATTEMPT_TIMEOUT_MS,
+          AttributeValue.builder()
+              .n(String.valueOf(params.getDynamoApiCallAttemptTimeoutMs()))
+              .build());
+    }
+
+    // Add DynamoDB advanced HTTP client configuration if present
+    if (params.getDynamoConnectionAcquisitionTimeoutMs() != null) {
+      shardConnectionMap.put(
+          DYNAMO_CONNECTION_ACQUISITION_TIMEOUT_MS,
+          AttributeValue.builder()
+              .n(String.valueOf(params.getDynamoConnectionAcquisitionTimeoutMs()))
+              .build());
+    }
+
+    // Add DynamoDB read configuration if present
+    if (params.getDynamoConsistentRead() != null) {
+      shardConnectionMap.put(
+          DYNAMO_CONSISTENT_READ,
+          AttributeValue.builder().bool(params.getDynamoConsistentRead()).build());
     }
 
     return shardConnectionMap;

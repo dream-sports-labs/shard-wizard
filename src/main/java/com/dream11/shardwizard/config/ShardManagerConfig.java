@@ -1,6 +1,7 @@
 package com.dream11.shardwizard.config;
 
 import com.dream11.shardwizard.constant.DatabaseType;
+import com.dream11.shardwizard.constant.RouterType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.typesafe.config.Optional;
 import java.util.Map;
@@ -18,6 +19,9 @@ public class ShardManagerConfig {
 
   @Optional private String metricsAgent = "noop"; // Options: datadog, newrelic, noop
   private String serviceName; // This is used in metrics
+
+  @Optional
+  private RouterType routerType = RouterType.MODULO; // Default to MODULO for backward compatibility
 
   private MetricAgentConfig metricsAgentConfig;
 
